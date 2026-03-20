@@ -36,6 +36,8 @@ import collections
 import threading
 import json
 import asyncio
+import math
+import statistics as _statistics
 from websocket._app import WebSocketApp as _WebSocketApp
 from zoneinfo import ZoneInfo
 from cryptography.hazmat.primitives import serialization, hashes
@@ -1077,6 +1079,103 @@ def db_load_auto_trades(limit=50):
 
 
 db_init_auto_trades()
+
+
+# ── DCA Paper Trader DB ───────────────────────────────────────────────────────
+
+def db_init_paper_trader():
+    if not DATABASE_URL:
+        return
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS paper_trader_log (
+                        id SERIAL PRIMARY KEY,
+                        ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                        ticker TEXT NOT NULL,
+                        side TEXT NOT NULL,
+                        action TEXT NOT NULL,
+                        level_idx INTEGER,
+                        qty INTEGER NOT NULL,
+                        fill_price_cents INTEGER NOT NULL,
+                        fee_cents INTEGER NOT NULL DEFAULT 0,
+                        bankroll_cents INTEGER NOT NULL,
+                        pnl_cents INTEGER,
+                        fill_verified BOOLEAN DEFAULT FALSE,
+                        sell_verified BOOLEAN DEFAULT FALSE,
+                        market_bid_cents INTEGER,
+                        market_ask_cents INTEGER,
+                        reason TEXT
+                    )
+                """)
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+
+def db_insert_paper_trade(ticker, side, action, level_idx, qty, fill_price_cents,
+                           fee_cents, bankroll_cents, pnl_cents,
+                           fill_verified, sell_verified,
+                           market_bid_cents, market_ask_cents, reason):
+    if not DATABASE_URL:
+        return
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO paper_trader_log
+                    (ts, ticker, side, action, level_idx, qty, fill_price_cents,
+                     fee_cents, bankroll_cents, pnl_cents, fill_verified, sell_verified,
+                     market_bid_cents, market_ask_cents, reason)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    datetime.now(timezone.utc).isoformat(),
+                    ticker, side, action, level_idx, qty, fill_price_cents,
+                    fee_cents, bankroll_cents, pnl_cents,
+                    fill_verified, sell_verified,
+                    market_bid_cents, market_ask_cents, reason,
+                ))
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+
+def db_load_paper_trades(limit=100):
+    if not DATABASE_URL:
+        return []
+    conn = _db_conn()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT ts, ticker, side, action, level_idx, qty, fill_price_cents,
+                       fee_cents, bankroll_cents, pnl_cents, fill_verified, sell_verified,
+                       market_bid_cents, market_ask_cents, reason
+                FROM paper_trader_log
+                ORDER BY ts DESC LIMIT %s
+            """, (limit,))
+            cols = ["ts", "ticker", "side", "action", "level_idx", "qty",
+                    "fill_price_cents", "fee_cents", "bankroll_cents", "pnl_cents",
+                    "fill_verified", "sell_verified", "market_bid_cents",
+                    "market_ask_cents", "reason"]
+            return [dict(zip(cols, r)) for r in cur.fetchall()]
+    except Exception:
+        return []
+    finally:
+        conn.close()
+
+
+db_init_paper_trader()
 
 
 def db_init_training_samples():
@@ -6175,6 +6274,395 @@ def start_auto_trader():
     state["thread"][0] = t
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# DCA PAPER TRADER — both-sides market-maker DCA on KXBTC15M
+# Strategy: buy YES + NO independently at 40¢/35¢/30¢, exit at 20% TP
+# Runs exclusively in background_runner; persists across UI sessions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_PT_CFG_FILE = "/tmp/paper_trader_cfg.json"
+_PT_STATE_FILE = "/tmp/paper_trader_state.json"
+_PT_SINGLETON = [None]
+_PT_SINGLETON_LOCK = threading.Lock()
+
+_PT_LEVELS = [
+    {"qty": 1, "target_cents": 40},
+    {"qty": 2, "target_cents": 35},
+    {"qty": 2, "target_cents": 30},
+]
+_PT_BUFFER_CENTS = 1
+_PT_TP_MULT = 1.20
+_PT_RISK_CAP = 0.08
+_PT_POLL_SEC = 8
+
+
+def _pt_read_cfg() -> dict:
+    try:
+        with open(_PT_CFG_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {"enabled": True, "starting_bankroll": 100.0}
+
+
+def _pt_write_cfg(cfg: dict):
+    try:
+        tmp = _PT_CFG_FILE + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(cfg, f)
+        os.replace(tmp, _PT_CFG_FILE)
+    except Exception:
+        pass
+
+
+def _pt_state() -> dict:
+    with _PT_SINGLETON_LOCK:
+        if _PT_SINGLETON[0] is None:
+            cfg = _pt_read_cfg()
+            br = float(cfg.get("starting_bankroll", 100.0))
+            _PT_SINGLETON[0] = {
+                "enabled": [cfg.get("enabled", True)],
+                "starting_bankroll": [br],
+                "bankroll": [br],
+                "ticker": [None],
+                "thread": [None],
+                "stop_flag": [False],
+                "lock": threading.Lock(),
+                "log": collections.deque(maxlen=500),
+                "position_yes": [0],
+                "total_invested_yes": [0.0],
+                "filled_levels_yes": [[False, False, False]],
+                "position_no": [0],
+                "total_invested_no": [0.0],
+                "filled_levels_no": [[False, False, False]],
+                "price_history": collections.deque(maxlen=40),
+                "session_trades": [0],
+                "session_pnl": [0.0],
+                "status": ["idle"],
+                "last_yes_price": [None],
+                "last_no_price": [None],
+                "last_ts": [None],
+            }
+        return _PT_SINGLETON[0]
+
+
+def _pt_fee_cents(qty: int, price_frac: float, is_maker: bool = False) -> int:
+    """Kalshi fee in integer cents (ceiling)."""
+    mult = 0.0175 if is_maker else 0.07
+    return math.ceil(mult * qty * price_frac * (1.0 - price_frac) * 100)
+
+
+def _pt_get_market(ticker: str):
+    """Return (yes_frac, no_frac, bid_cents, ask_cents) from live Kalshi API."""
+    try:
+        mdata = _kalshi_get_bg(f"/markets/{ticker}", {})
+        if not mdata:
+            return None, None, None, None
+        m = mdata.get("market", mdata)
+        lp = m.get("last_price") or m.get("last_price_dollars")
+        if lp:
+            yes_frac = float(lp)
+            if yes_frac > 1.0:
+                yes_frac /= 100.0
+        else:
+            bid = float(m.get("yes_bid") or m.get("yes_bid_dollars") or 50)
+            ask = float(m.get("yes_ask") or m.get("yes_ask_dollars") or bid)
+            if bid > 1.0:
+                bid /= 100.0
+                ask /= 100.0
+            yes_frac = round((bid + ask) / 2, 4)
+
+        # live orderbook for bid/ask verification
+        bid_cents, ask_cents = None, None
+        obdata = _kalshi_get_bg(f"/markets/{ticker}/orderbook", {})
+        if obdata:
+            ob = obdata.get("orderbook", {})
+            yes_bids = ob.get("yes", [])   # [[price_cents, qty], ...]
+            no_bids = ob.get("no", [])     # NO bids = YES asks
+            if yes_bids:
+                bid_cents = max(b[0] for b in yes_bids)
+            if no_bids:
+                ask_cents = 100 - min(b[0] for b in no_bids)
+
+        return round(yes_frac, 4), round(1.0 - yes_frac, 4), bid_cents, ask_cents
+    except Exception:
+        return None, None, None, None
+
+
+def _pt_write_state_file(s: dict):
+    try:
+        data = {
+            "enabled": s["enabled"][0],
+            "bankroll": round(s["bankroll"][0], 2),
+            "starting_bankroll": round(s["starting_bankroll"][0], 2),
+            "ticker": s["ticker"][0],
+            "status": s["status"][0],
+            "session_trades": s["session_trades"][0],
+            "session_pnl": round(s["session_pnl"][0], 2),
+            "position_yes": s["position_yes"][0],
+            "position_no": s["position_no"][0],
+            "total_invested_yes": round(s["total_invested_yes"][0], 2),
+            "total_invested_no": round(s["total_invested_no"][0], 2),
+            "filled_levels_yes": s["filled_levels_yes"][0],
+            "filled_levels_no": s["filled_levels_no"][0],
+            "last_yes_price": s["last_yes_price"][0],
+            "last_no_price": s["last_no_price"][0],
+            "last_ts": s["last_ts"][0],
+            "log": list(s["log"])[:30],
+        }
+        tmp = _PT_STATE_FILE + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(data, f, default=str)
+        os.replace(tmp, _PT_STATE_FILE)
+    except Exception:
+        pass
+
+
+def _pt_read_state_file() -> dict:
+    try:
+        with open(_PT_STATE_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _pt_reset_side(s: dict, side: str):
+    s[f"position_{side}"][0] = 0
+    s[f"total_invested_{side}"][0] = 0.0
+    s[f"filled_levels_{side}"][0] = [False, False, False]
+
+
+def _pt_discover_ticker() -> str | None:
+    try:
+        data = _kalshi_get_bg("/markets",
+                              {"series_ticker": "KXBTC15M", "status": "open", "limit": 5})
+        markets = (data or {}).get("markets", [])
+        if markets:
+            return markets[0]["ticker"]
+    except Exception:
+        pass
+    return None
+
+
+def _pt_allow_entries() -> bool:
+    """No new buys after minute 10 in any 15-minute window."""
+    return (datetime.now(timezone.utc).minute % 15) < 10
+
+
+def _pt_process_side(s: dict, side: str, price_frac: float,
+                     bid_cents, ask_cents, ticker: str,
+                     log_fn) -> bool:
+    """Entry + exit logic for one side. Returns True if an exit occurred."""
+    price_cents = round(price_frac * 100)
+
+    # ── ENTRIES (first 10 of every 15 minutes) ────────────────────────────
+    if _pt_allow_entries():
+        filled = s[f"filled_levels_{side}"][0]
+        for i, level in enumerate(_PT_LEVELS):
+            if filled[i]:
+                continue
+            trigger = level["target_cents"] + _PT_BUFFER_CENTS
+            if price_cents <= trigger:
+                fill_cents = min(price_cents + 1, trigger)
+                fill_frac = fill_cents / 100.0
+                qty = level["qty"]
+                cost_cents = qty * fill_cents
+                fee_c = _pt_fee_cents(qty, fill_frac, is_maker=True)
+                total_out_cents = cost_cents + fee_c
+
+                if total_out_cents > s["bankroll"][0] * 100 * _PT_RISK_CAP:
+                    log_fn(f"[{side.upper()}] Risk cap — skip L{i}")
+                    continue
+
+                # Fill verification: is the fill price reachable on the live book?
+                if side == "yes":
+                    fill_verified = ask_cents is not None and fill_cents <= ask_cents
+                else:
+                    no_ask = (100 - bid_cents) if bid_cents is not None else None
+                    fill_verified = no_ask is not None and fill_cents <= no_ask
+
+                s["bankroll"][0] -= total_out_cents / 100.0
+                s[f"position_{side}"][0] += qty
+                s[f"total_invested_{side}"][0] += cost_cents / 100.0
+                filled[i] = True
+                s["session_trades"][0] += 1
+
+                log_fn(f"[{side.upper()}] BUY L{i} {qty}@{fill_cents}¢  "
+                       f"fee={fee_c}¢  br=${s['bankroll'][0]:.2f}  "
+                       f"fill={'✅' if fill_verified else '⚠️ unverified'}")
+
+                db_insert_paper_trade(
+                    ticker=ticker, side=side, action="buy", level_idx=i,
+                    qty=qty, fill_price_cents=fill_cents, fee_cents=fee_c,
+                    bankroll_cents=round(s["bankroll"][0] * 100),
+                    pnl_cents=None,
+                    fill_verified=fill_verified, sell_verified=False,
+                    market_bid_cents=bid_cents, market_ask_cents=ask_cents,
+                    reason=f"level_{i}",
+                )
+
+    # ── EXITS (always active) ──────────────────────────────────────────────
+    position = s[f"position_{side}"][0]
+    if position <= 0:
+        return False
+
+    invested = s[f"total_invested_{side}"][0]
+    avg_cents = round((invested / position) * 100)
+    tp_cents = round(avg_cents * _PT_TP_MULT)
+
+    should_exit = False
+    reason = None
+
+    if price_cents >= tp_cents:
+        should_exit = True
+        reason = "tp20"
+    else:
+        ph = list(s["price_history"])
+        if len(ph) > 8:
+            try:
+                vol = _statistics.stdev(ph[-8:])
+                if vol > 0.045 and price_cents >= round(tp_cents * 0.97):
+                    should_exit = True
+                    reason = "volatile_exit"
+            except Exception:
+                pass
+
+    if should_exit:
+        proceeds = position * price_cents
+        fee_c = _pt_fee_cents(position, price_frac, is_maker=False)
+        net_cents = proceeds - fee_c
+        pnl_cents = net_cents - round(invested * 100)
+
+        # Sell verification: is exit price achievable on the live book?
+        if side == "yes":
+            sell_verified = bid_cents is not None and price_cents >= bid_cents
+        else:
+            no_bid = (100 - ask_cents) if ask_cents is not None else None
+            sell_verified = no_bid is not None and price_cents >= no_bid
+
+        s["bankroll"][0] += net_cents / 100.0
+        s["session_pnl"][0] += pnl_cents / 100.0
+        s["session_trades"][0] += 1
+
+        log_fn(f"[{side.upper()}] SELL {position}@{price_cents}¢  "
+               f"pnl={pnl_cents:+d}¢  br=${s['bankroll'][0]:.2f}  "
+               f"reason={reason}  sell={'✅' if sell_verified else '⚠️ unverified'}")
+
+        db_insert_paper_trade(
+            ticker=ticker, side=side, action="sell", level_idx=None,
+            qty=position, fill_price_cents=price_cents, fee_cents=fee_c,
+            bankroll_cents=round(s["bankroll"][0] * 100),
+            pnl_cents=pnl_cents,
+            fill_verified=False, sell_verified=sell_verified,
+            market_bid_cents=bid_cents, market_ask_cents=ask_cents,
+            reason=reason,
+        )
+        _pt_reset_side(s, side)
+        return True
+
+    return False
+
+
+def _pt_loop():
+    s = _pt_state()
+    s["status"][0] = "running"
+    current_ticker = [None]
+
+    def _log(msg: str, level: str = "info"):
+        entry = {"ts": datetime.now(timezone.utc).isoformat(), "msg": msg, "level": level}
+        with s["lock"]:
+            s["log"].appendleft(entry)
+
+    _log("DCA paper trader started")
+
+    while not s["stop_flag"][0]:
+        try:
+            cfg = _pt_read_cfg()
+            with s["lock"]:
+                s["enabled"][0] = cfg.get("enabled", True)
+
+            if not s["enabled"][0]:
+                s["status"][0] = "paused"
+                _pt_write_state_file(s)
+                time.sleep(5)
+                continue
+
+            ticker = _pt_discover_ticker()
+            if not ticker:
+                s["status"][0] = "no_market"
+                time.sleep(15)
+                continue
+
+            # Detect window transition → close open positions at last known price
+            if current_ticker[0] and ticker != current_ticker[0]:
+                _log(f"Window close: {current_ticker[0]} → {ticker}")
+                for side in ("yes", "no"):
+                    pos = s[f"position_{side}"][0]
+                    if pos > 0:
+                        lp = s["last_yes_price"][0] if side == "yes" else s["last_no_price"][0]
+                        if lp:
+                            p_c = round(lp * 100)
+                            inv = s[f"total_invested_{side}"][0]
+                            fee_c = _pt_fee_cents(pos, lp, is_maker=False)
+                            pnl_c = pos * p_c - round(inv * 100) - fee_c
+                            s["bankroll"][0] += (pos * p_c - fee_c) / 100.0
+                            s["session_pnl"][0] += pnl_c / 100.0
+                            db_insert_paper_trade(
+                                ticker=current_ticker[0], side=side, action="sell",
+                                level_idx=None, qty=pos, fill_price_cents=p_c,
+                                fee_cents=fee_c,
+                                bankroll_cents=round(s["bankroll"][0] * 100),
+                                pnl_cents=pnl_c,
+                                fill_verified=False, sell_verified=False,
+                                market_bid_cents=None, market_ask_cents=None,
+                                reason="window_close",
+                            )
+                            _log(f"[{side.upper()}] Window-close exit {pos}@{p_c}¢  pnl={pnl_c:+d}¢")
+                        _pt_reset_side(s, side)
+                current_ticker[0] = ticker
+
+            if current_ticker[0] is None:
+                current_ticker[0] = ticker
+
+            s["ticker"][0] = ticker
+
+            yes_frac, no_frac, bid_cents, ask_cents = _pt_get_market(ticker)
+            if yes_frac is None:
+                time.sleep(10)
+                continue
+
+            s["last_yes_price"][0] = yes_frac
+            s["last_no_price"][0] = no_frac
+            s["last_ts"][0] = datetime.now(timezone.utc).isoformat()
+            s["price_history"].append(yes_frac)
+            s["status"][0] = "running"
+
+            _pt_process_side(s, "yes", yes_frac, bid_cents, ask_cents, ticker, _log)
+            _pt_process_side(s, "no",  no_frac,  bid_cents, ask_cents, ticker, _log)
+
+            _pt_write_state_file(s)
+
+        except Exception as exc:
+            _log(f"Loop error: {exc}", level="error")
+
+        time.sleep(_PT_POLL_SEC)
+
+    s["status"][0] = "stopped"
+    _pt_write_state_file(s)
+
+
+def start_paper_trader():
+    if not os.environ.get("_BG_RUNNER"):
+        return
+    s = _pt_state()
+    t = s["thread"][0]
+    if t is not None and t.is_alive():
+        return
+    s["stop_flag"][0] = False
+    t = threading.Thread(target=_pt_loop, daemon=True, name="dca-paper-trader")
+    t.start()
+    s["thread"][0] = t
+
+
 def _staggered_startup():
     start_bg_data_collector()
     time.sleep(5)
@@ -6185,6 +6673,8 @@ def _staggered_startup():
     start_ensemble_predictor()
     time.sleep(2)
     start_auto_trader()
+    time.sleep(2)
+    start_paper_trader()
 
 if os.environ.get("_BG_RUNNER"):
     threading.Thread(target=_staggered_startup, daemon=True, name="staggered-startup").start()
@@ -7358,6 +7848,129 @@ def _render_ensemble_tab():
 
 _render_ensemble_tab()
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DCA PAPER TRADER UI
+# ═══════════════════════════════════════════════════════════════════════════════
+
+st.divider()
+st.subheader("📋 DCA Paper Trader — Both Sides (KXBTC15M)")
+st.caption("Mirrors YES + NO sides independently. Buys 1@40¢ · 2@35¢ · 2@30¢. Exits at 20% TP. "
+           "First 10 min = entries open · Last 5 min = exits only. Kalshi fees applied.")
+
+_pt_sf = _pt_read_state_file()
+
+# ── Controls ──────────────────────────────────────────────────────────────────
+_ptc1, _ptc2, _ptc3 = st.columns([1, 1, 2])
+
+with _ptc1:
+    _pt_enabled_now = bool(_pt_sf.get("enabled", True))
+    _pt_toggle = st.toggle("Enable DCA Paper Trader", value=_pt_enabled_now, key="pt_enable_toggle")
+    if _pt_toggle != _pt_enabled_now:
+        _new_cfg = _pt_read_cfg()
+        _new_cfg["enabled"] = _pt_toggle
+        _pt_write_cfg(_new_cfg)
+        st.rerun()
+
+with _ptc2:
+    _pt_br_default = float(_pt_sf.get("starting_bankroll", 100.0))
+    _pt_br_input = st.number_input("Starting Bankroll ($)", min_value=10.0, max_value=10000.0,
+                                    value=_pt_br_default, step=10.0, key="pt_bankroll_input")
+    if abs(_pt_br_input - _pt_br_default) > 0.01:
+        _new_cfg2 = _pt_read_cfg()
+        _new_cfg2["starting_bankroll"] = _pt_br_input
+        _pt_write_cfg(_new_cfg2)
+        st.caption("Restart the app to apply new bankroll.")
+
+with _ptc3:
+    _pt_status = _pt_sf.get("status", "not started")
+    _pt_ticker = _pt_sf.get("ticker") or "—"
+    _pt_last_ts = _pt_sf.get("last_ts") or "—"
+    _enabled_tag = "🟢 RUNNING" if _pt_toggle else "🔴 PAUSED"
+    st.info(f"Status: **{_enabled_tag}** · Market: `{_pt_ticker}` · Last update: `{str(_pt_last_ts)[-8:]}`")
+
+# ── Bankroll & P&L summary ────────────────────────────────────────────────────
+_pt_m1, _pt_m2, _pt_m3, _pt_m4 = st.columns(4)
+_pt_bankroll = float(_pt_sf.get("bankroll", _pt_br_default))
+_pt_start_br = float(_pt_sf.get("starting_bankroll", _pt_br_default))
+_pt_net_pnl = _pt_bankroll - _pt_start_br
+_pt_sess_pnl = float(_pt_sf.get("session_pnl", 0.0))
+_pt_sess_trades = int(_pt_sf.get("session_trades", 0))
+
+_pt_m1.metric("Bankroll", f"${_pt_bankroll:.2f}", f"{_pt_net_pnl:+.2f}")
+_pt_m2.metric("Session P&L", f"${_pt_sess_pnl:.2f}")
+_pt_m3.metric("Session Trades", str(_pt_sess_trades))
+_pt_m4.metric("Net Return", f"{(_pt_net_pnl / _pt_start_br * 100):+.1f}%" if _pt_start_br else "—")
+
+# ── Live Positions ─────────────────────────────────────────────────────────────
+st.markdown("**Open Positions**")
+_pt_pos_yes = int(_pt_sf.get("position_yes", 0))
+_pt_pos_no = int(_pt_sf.get("position_no", 0))
+_pt_inv_yes = float(_pt_sf.get("total_invested_yes", 0.0))
+_pt_inv_no = float(_pt_sf.get("total_invested_no", 0.0))
+_pt_fl_yes = _pt_sf.get("filled_levels_yes", [False, False, False])
+_pt_fl_no = _pt_sf.get("filled_levels_no", [False, False, False])
+_pt_yp = _pt_sf.get("last_yes_price")
+_pt_np = _pt_sf.get("last_no_price")
+
+def _pt_position_row(side, pos, invested, filled, last_price):
+    if pos <= 0:
+        return f"**{side.upper()}:** No position · Levels: {'·'.join(['✅' if f else '○' for f in filled])}"
+    avg_c = round((invested / pos) * 100) if pos else 0
+    tp_c = round(avg_c * 1.20)
+    cur_c = round((last_price or 0) * 100)
+    pnl_est = pos * cur_c - round(invested * 100)
+    return (f"**{side.upper()}:** {pos} contracts · avg {avg_c}¢ · TP {tp_c}¢ · "
+            f"cur {cur_c}¢ · est P&L {pnl_est:+d}¢ · "
+            f"Levels: {'·'.join(['✅' if f else '○' for f in filled])}")
+
+_pt_posa, _pt_posb = st.columns(2)
+with _pt_posa:
+    st.markdown(_pt_position_row("yes", _pt_pos_yes, _pt_inv_yes, _pt_fl_yes, _pt_yp))
+with _pt_posb:
+    st.markdown(_pt_position_row("no", _pt_pos_no, _pt_inv_no, _pt_fl_no, _pt_np))
+
+# ── Trade Log ──────────────────────────────────────────────────────────────────
+st.markdown("**Trade Log** (most recent 100)")
+
+_pt_trades = db_load_paper_trades(100)
+if _pt_trades:
+    _ptdf = pd.DataFrame(_pt_trades)
+    _ptdf["ts"] = pd.to_datetime(_ptdf["ts"]).dt.strftime("%m-%d %H:%M:%S")
+    _ptdf["fill_price_cents"] = _ptdf["fill_price_cents"].apply(lambda x: f"{x}¢")
+    _ptdf["pnl_cents"] = _ptdf["pnl_cents"].apply(
+        lambda x: f"{int(x):+d}¢" if pd.notna(x) and x is not None else "—")
+    _ptdf["fee_cents"] = _ptdf["fee_cents"].apply(lambda x: f"{int(x)}¢")
+    _ptdf["bankroll_cents"] = _ptdf["bankroll_cents"].apply(lambda x: f"${x/100:.2f}")
+    _ptdf["fill_verified"] = _ptdf["fill_verified"].apply(lambda x: "✅" if x else "⚠️")
+    _ptdf["sell_verified"] = _ptdf["sell_verified"].apply(lambda x: "✅" if x else "—")
+    _ptdf["level_idx"] = _ptdf["level_idx"].apply(lambda x: f"L{int(x)}" if pd.notna(x) and x is not None else "—")
+    _ptdf["market_bid_cents"] = _ptdf["market_bid_cents"].apply(lambda x: f"{int(x)}¢" if pd.notna(x) and x is not None else "—")
+    _ptdf["market_ask_cents"] = _ptdf["market_ask_cents"].apply(lambda x: f"{int(x)}¢" if pd.notna(x) and x is not None else "—")
+    _ptdf.columns = ["Time", "Ticker", "Side", "Action", "Level", "Qty", "Fill", "Fee",
+                     "Bankroll", "P&L", "Fill OK", "Sell OK", "Bid", "Ask", "Reason"]
+    st.dataframe(
+        _ptdf[["Time", "Side", "Action", "Level", "Qty", "Fill", "Fee",
+               "P&L", "Bankroll", "Fill OK", "Sell OK", "Bid", "Ask", "Reason"]],
+        hide_index=True, width="stretch"
+    )
+else:
+    st.caption("No paper trades yet — trader is running and watching for entry levels (40¢ / 35¢ / 30¢).")
+
+# ── Recent activity log ────────────────────────────────────────────────────────
+with st.expander("Activity Log (last 20 events)", expanded=False):
+    _pt_log_entries = _pt_sf.get("log", [])
+    if _pt_log_entries:
+        for _e in _pt_log_entries[:20]:
+            _ts = str(_e.get("ts", ""))[-8:]
+            _lvl = _e.get("level", "info")
+            _msg = _e.get("msg", "")
+            if _lvl == "error":
+                st.error(f"`{_ts}` {_msg}")
+            else:
+                st.text(f"{_ts}  {_msg}")
+    else:
+        st.caption("No activity logged yet.")
 
 
 @st.fragment(run_every=30)
