@@ -1,6 +1,6 @@
 # Daily Evidence Report — 2026-03-20
 
-**Generated:** 2026-03-20 17:11:50 UTC
+**Generated:** 2026-03-20 18:05:07 UTC
 **Repository:** https://github.com/raryan744/Markets
 
 ---
@@ -48,18 +48,12 @@
 
 ```
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-runner         1  0.2  0.0 2603484 63976 ?       Ssl  14:59   0:19 /nix/store/f44v4qidsnm4323dwjcq9q0rxahh1pvb-pid1-0.0.1/bin/pid1 --pid2-pooling
-runner        14  1.2  1.0 24146732 665364 ?     Sl   14:59   1:42 pid2 --no-deprecation --disable-warning=ExperimentalWarning --use-openssl-ca /pid2/bundles/0.0.3850/server.cjs --start-timestamp=1774018756336 --socket-listener-fd=3 --pinger-socket-path=/run/replit/socks/pid2ping.0.sock --pooled-fd=4
-runner      1427  0.0  0.0   2960  2108 ?        S    16:14   0:00 sh -c /nix/store/775cppcslcvxd4x2v8x4k78xw94zg88a-ty-0.0.21/bin/ty server
-runner      1428  0.2  0.5 2137904 342032 ?      Sl   16:14   0:10 /nix/store/775cppcslcvxd4x2v8x4k78xw94zg88a-ty-0.0.21/bin/ty server
-runner      2484  0.0  0.0   3984  2684 ?        S    16:20   0:00 nix-editor --return-output
-runner      9680  0.0  0.0   8252  5076 pts/0    Ss   17:08   0:00 /nix/store/smkzrg2vvp3lng3hq7v9svfni5mnqjh2-bash-interactive-5.2p37/bin/bash -rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc --rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc -ci python3 background_runner.py & streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
-runner      9687  159  3.7 5224836 2470844 pts/0 Sl   17:08   5:40 python3 background_runner.py
-runner      9688  0.6  0.1 458180 80852 pts/0    Sl+  17:08   0:01 /nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin/python3 /home/runner/workspace/.pythonlibs/bin/streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
-runner     10467  1.3  0.0   8252  4868 pts/1    Ss   17:11   0:00 /nix/store/smkzrg2vvp3lng3hq7v9svfni5mnqjh2-bash-interactive-5.2p37/bin/bash -rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc --rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc -ci python3 background_runner.py & streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
-runner     10474  120  0.1 917344 131444 pts/1   Sl   17:11   0:00 python3 background_runner.py
-runner     10475 88.2  0.1 107644 97112 pts/1    R+   17:11   0:00 /nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin/python3 /home/runner/workspace/.pythonlibs/bin/streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
-runner     10503  0.0  0.0  11520  5292 pts/1    R    17:11   0:00 ps aux
+runner         1  0.0  0.0 2234056 49596 ?       Ssl  16:30   0:00 /nix/store/f44v4qidsnm4323dwjcq9q0rxahh1pvb-pid1-0.0.1/bin/pid1 --pid2-pooling
+runner        14  0.1  0.8 23412200 553332 ?     Sl   16:30   0:06 pid2 --no-deprecation --disable-warning=ExperimentalWarning --use-openssl-ca /pid2/bundles/0.0.3850/server.cjs --start-timestamp=1774024226361 --socket-listener-fd=3 --pinger-socket-path=/run/replit/socks/pid2ping.0.sock --pooled-fd=4
+runner        55  0.1  0.0   8252  4888 pts/0    Ss   18:04   0:00 /nix/store/smkzrg2vvp3lng3hq7v9svfni5mnqjh2-bash-interactive-5.2p37/bin/bash -rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc --rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc -ci python3 background_runner.py & streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
+runner        62 10.7  0.2 885672 136864 pts/0   Sl   18:04   0:01 python3 background_runner.py
+runner        63  9.1  0.1 471656 94328 pts/0    Sl+  18:04   0:00 /nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin/python3 /home/runner/workspace/.pythonlibs/bin/streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
+runner        89 10.8  0.0  11172  4908 pts/0    R    18:05   0:00 ps aux
 
 ```
 
@@ -71,16 +65,16 @@ runner     10503  0.0  0.0  11520  5292 pts/1    R    17:11   0:00 ps aux
 Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_prices, ensemble_predictions, kalshi_candlesticks, kalshi_depth_signal, kalshi_orderbook, training_samples, xgb_mtf_predictions
 
   auto_trades: 775 rows
-  bobby_brti_ticks: 1641052 rows
-  book_image_snapshots: 3629 rows
-  brti_ticks: 273403 rows
-  btc_prices: 13091 rows
-  ensemble_predictions: 615297 rows
-  kalshi_candlesticks: 2584 rows
+  bobby_brti_ticks: 1650112 rows
+  book_image_snapshots: 3665 rows
+  brti_ticks: 274483 rows
+  btc_prices: 13145 rows
+  ensemble_predictions: 618657 rows
+  kalshi_candlesticks: 2587 rows
   kalshi_depth_signal: 0 rows
-  kalshi_orderbook: 59536 rows
-  training_samples: 1621984 rows
-  xgb_mtf_predictions: 14766 rows
+  kalshi_orderbook: 54527 rows
+  training_samples: 1625122 rows
+  xgb_mtf_predictions: 15100 rows
 
 ```
 
@@ -91,12 +85,12 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
 ```
   DATABASE_URL=helium/heliumdb?sslmode=disable
   HOME=/home/runner
-  PATH=/nix/store/6d497pvkcidpdicsy0srpsmx48l3144p-gobject-introspection-wrapped-1.84.0-dev/bin:/nix/store/d667kdfbfn17905f7kmdl33r9gvwzaji-pkg-config-wrapper-0.29.2/bin:/nix/store/zbydgvn9gypb3vg88mzydn88ky6cibaz-dbus-1.14.10/bin:/nix/store/6bymzja2kc2kvpx8r8vhmgmj8g47p8ss-gdk-pixbuf-2.42.12-dev/bin:/nix/store/88zx26jgcxgl6abfvakbv3phrywkl339-gdk-pixbuf-2.42.12/bin:/nix/store/flpfkdzbac7071xlydh8f4qqq6dvnzx9-gettext-0.22.5/bin:/nix/store/ygri5mmqmril5ll9lhawa01faa2qhdvd-cargo-1.86.0/bin:/nix/store/w9qijf113qkgqcv54ydhbjh0rlslysbr-freetype-2.13.3-dev/bin:/nix/store/y0n9h3hcv2wfp2rv03ii862lhycx5wij-glib-2.84.3-dev/bin:/nix/store/9sjxbq6k58fcrxrjdi6wwdbxa2ivs4fg-gtk+3-3.24.49-dev/bin:/nix/store/ddap6dm3fjdm0zmw4m3rls73a0gml3xd-zstd-1.5.7-bin/bin:/nix/store/cmv326slnswzsjm2sqgbz16hzzqvkfjy-xz-5.8.1-bin/bin:/nix/store/gzlgwyd3n4r17yyx7hrrlpkmplqianbl-openssl-3.4.1-bin/bin:/nix/store/ynlnyy6rn70kvzamy3b40bp3qlz70mn0-ffmpeg-full-7.1.1-bin/bin:/nix/store/28z6bx9sg0lsr7wra22pbjsk6fzfphy4-bzip2-1.0.8-bin/bin:/nix/store/jl5pd089fd6ciars6gpsg48hh2h97nqd-git-with-svn-2.49.0/bin:/nix/store/wbv7b4dc17n1azxan5m5mm07fifai44a-zstd-1.5.7/bin:/nix/store/zgfr10jz12gpfxn5n4mlblxxknv8f19v-libtiff-4.7.0-bin/bin:/nix/store/3d1gd74i76bhlxr249lmm9cv5bq30aqd-fribidi-1.0.16/bin:/nix/store/jrmf65p7pn32f0hxlg2qxj99s8sw2038-cups-2.4.11-dev/bin:/nix/store/m9rqkx8s9a45wivak202kiw7p11xp6n5-libwebp-1.5.0/bin:/nix/store/i2c4lj0hirk7i27xgib08zy0rdrkfi70-libpng-apng-1.6.46-dev/bin:/nix/store/f9zdz15l2zd408yq7a3bgrj593kpwjqx-rustc-wrapper-1.86.0/bin:/nix/store/llqrkvzn5f08iwlq4xqy5av5mppgp7yp-brotli-1.1.0/bin:/nix/store/8xj3g825qwj894bxafa8h98scxxyvxps-libdeflate-1.23/bin:/nix/store/jfpaxm9dvrrv3xsdbz5y3myj7sxkp7hj-pango-1.56.3-bin/bin:/nix/store/shh4106z91l7cx93zk1m8mrwkb5ykwhd-qhull-2020.2/bin:/nix/store/i8ls8rz7c56ipdqwkr3c1lcpr30kh77m-fontconfig-2.16.0-bin/bin:/nix/store/p4c8g2fhfabnkx8rm4ng8radkh83h7ba-cairo-1.18.2-dev/bin:/nix/store/yfrv3rw3w96wxvgfga55dpb291v2x7cl-harfbuzz-10.2.0-dev/bin:/nix/store/dll7gaqkvw597jim01q7rpbsx2dzhsr0-graphite2-1.3.14/bin:/nix/store/6x7s7vfydrik42pk4599sm1jcqxmi1qp-gtk+3-3.24.49/bin:/nix/store/231d6mmkylzr80pf30dbywa9x9aryjgy-dbus-1.14.10-lib/bin:/nix/store/si92b84j9mqr3zshc8l78b7liq98sldc-cups-2.4.11/bin:/nix/store/bqppwwi9g8nzbk0b6hq6fwkqnwd06y63-tcl-8.6.15/bin:/nix/store/75qdpfrkxkj0c64qnjjn51cawi84xr30-ghostscript-with-X-10.05.1/bin:/nix/store/lrrj9h7h1ifbdv82rrbddxracm5jjxwx-libjpeg-turbo-3.0.4-bin/bin:/nix/store/bd7z19f32ww73wlrkpqdcma7ra67hs82-expat-2.7.1-dev/bin:/nix/store/3ybnl9nq86s7jz0i8pzqlrabjgdxzrjz-glib-2.84.3-bin/bin:/nix/store/lpspyskfibz1b27c4914p2qipgpm1rva-tk-8.6.15/bin:/nix/store/bgwr5i8jf8jpg75rr53rz3fqv5k8yrwp-postgresql-16.10/bin:/home/runner/workspace/.pythonlibs/bin:/nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin:/nix/store/xwg0ddq9mjf6ibwdvp93jsp0cf51z3xr-pip-wrapper/bin:/nix/store/ypy3l3k428kc1kmcw090wlbxi8vj1m8l-poetry-wrapper/bin:/nix/store/6m2322jq0rkfdnv6cm3dq8437djbfv1l-uv-0.9.5/bin:/nix/store/gi3n1mvycj13x8bs2x90fj9p0wr2z11f-pid1/bin:/nix/store/6h39ipxhzp4r5in5g4rhdjz7p7fkicd0-replit-runtime-path/bin:/home/runner/.nix-profile/bin:/home/runner/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  PATH=/nix/store/6d497pvkcidpdicsy0srpsmx48l3144p-gobject-introspection-wrapped-1.84.0-dev/bin:/nix/store/d667kdfbfn17905f7kmdl33r9gvwzaji-pkg-config-wrapper-0.29.2/bin:/nix/store/zbydgvn9gypb3vg88mzydn88ky6cibaz-dbus-1.14.10/bin:/nix/store/6bymzja2kc2kvpx8r8vhmgmj8g47p8ss-gdk-pixbuf-2.42.12-dev/bin:/nix/store/88zx26jgcxgl6abfvakbv3phrywkl339-gdk-pixbuf-2.42.12/bin:/nix/store/flpfkdzbac7071xlydh8f4qqq6dvnzx9-gettext-0.22.5/bin:/nix/store/ygri5mmqmril5ll9lhawa01faa2qhdvd-cargo-1.86.0/bin:/nix/store/w9qijf113qkgqcv54ydhbjh0rlslysbr-freetype-2.13.3-dev/bin:/nix/store/y0n9h3hcv2wfp2rv03ii862lhycx5wij-glib-2.84.3-dev/bin:/nix/store/9sjxbq6k58fcrxrjdi6wwdbxa2ivs4fg-gtk+3-3.24.49-dev/bin:/nix/store/ddap6dm3fjdm0zmw4m3rls73a0gml3xd-zstd-1.5.7-bin/bin:/nix/store/cmv326slnswzsjm2sqgbz16hzzqvkfjy-xz-5.8.1-bin/bin:/nix/store/gzlgwyd3n4r17yyx7hrrlpkmplqianbl-openssl-3.4.1-bin/bin:/nix/store/ynlnyy6rn70kvzamy3b40bp3qlz70mn0-ffmpeg-full-7.1.1-bin/bin:/nix/store/28z6bx9sg0lsr7wra22pbjsk6fzfphy4-bzip2-1.0.8-bin/bin:/nix/store/jl5pd089fd6ciars6gpsg48hh2h97nqd-git-with-svn-2.49.0/bin:/nix/store/wbv7b4dc17n1azxan5m5mm07fifai44a-zstd-1.5.7/bin:/nix/store/zgfr10jz12gpfxn5n4mlblxxknv8f19v-libtiff-4.7.0-bin/bin:/nix/store/3d1gd74i76bhlxr249lmm9cv5bq30aqd-fribidi-1.0.16/bin:/nix/store/jrmf65p7pn32f0hxlg2qxj99s8sw2038-cups-2.4.11-dev/bin:/nix/store/m9rqkx8s9a45wivak202kiw7p11xp6n5-libwebp-1.5.0/bin:/nix/store/i2c4lj0hirk7i27xgib08zy0rdrkfi70-libpng-apng-1.6.46-dev/bin:/nix/store/f9zdz15l2zd408yq7a3bgrj593kpwjqx-rustc-wrapper-1.86.0/bin:/nix/store/llqrkvzn5f08iwlq4xqy5av5mppgp7yp-brotli-1.1.0/bin:/nix/store/8xj3g825qwj894bxafa8h98scxxyvxps-libdeflate-1.23/bin:/nix/store/jfpaxm9dvrrv3xsdbz5y3myj7sxkp7hj-pango-1.56.3-bin/bin:/nix/store/shh4106z91l7cx93zk1m8mrwkb5ykwhd-qhull-2020.2/bin:/nix/store/i8ls8rz7c56ipdqwkr3c1lcpr30kh77m-fontconfig-2.16.0-bin/bin:/nix/store/p4c8g2fhfabnkx8rm4ng8radkh83h7ba-cairo-1.18.2-dev/bin:/nix/store/yfrv3rw3w96wxvgfga55dpb291v2x7cl-harfbuzz-10.2.0-dev/bin:/nix/store/dll7gaqkvw597jim01q7rpbsx2dzhsr0-graphite2-1.3.14/bin:/nix/store/6x7s7vfydrik42pk4599sm1jcqxmi1qp-gtk+3-3.24.49/bin:/nix/store/231d6mmkylzr80pf30dbywa9x9aryjgy-dbus-1.14.10-lib/bin:/nix/store/si92b84j9mqr3zshc8l78b7liq98sldc-cups-2.4.11/bin:/nix/store/bqppwwi9g8nzbk0b6hq6fwkqnwd06y63-tcl-8.6.15/bin:/nix/store/75qdpfrkxkj0c64qnjjn51cawi84xr30-ghostscript-with-X-10.05.1/bin:/nix/store/lrrj9h7h1ifbdv82rrbddxracm5jjxwx-libjpeg-turbo-3.0.4-bin/bin:/nix/store/bd7z19f32ww73wlrkpqdcma7ra67hs82-expat-2.7.1-dev/bin:/nix/store/3ybnl9nq86s7jz0i8pzqlrabjgdxzrjz-glib-2.84.3-bin/bin:/nix/store/lpspyskfibz1b27c4914p2qipgpm1rva-tk-8.6.15/bin:/home/runner/workspace/.pythonlibs/bin:/nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin:/nix/store/xwg0ddq9mjf6ibwdvp93jsp0cf51z3xr-pip-wrapper/bin:/nix/store/ypy3l3k428kc1kmcw090wlbxi8vj1m8l-poetry-wrapper/bin:/nix/store/6m2322jq0rkfdnv6cm3dq8437djbfv1l-uv-0.9.5/bin:/nix/store/bgwr5i8jf8jpg75rr53rz3fqv5k8yrwp-postgresql-16.10/bin:/nix/store/gi3n1mvycj13x8bs2x90fj9p0wr2z11f-pid1/bin:/nix/store/6h39ipxhzp4r5in5g4rhdjz7p7fkicd0-replit-runtime-path/bin:/home/runner/.nix-profile/bin:/home/runner/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
   PGDATABASE=heliumdb
   PGHOST=helium
   PGPORT=5432
   PYTHONPATH=/nix/store/y50fwh2sha400s38m12psfxpvk2c8w39-sitecustomize/lib/python/site-packages:/nix/store/sqs1z4grvym0nv6r3ksdc990m8sr5wgx-python3.11-pip-25.0.1/lib/python3.11/site-packages
-  REPLIT_DB_URL=https://kv.replit.com/v0/eyJhbGciOiJIUzUxMiIsImlzcyI6ImNvbm1hbiIsImtpZCI6InByb2Q6MSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjb25tYW4iLCJleHAiOjE3NzQxMzQzNTEsImlhdCI6MTc3NDAyMjc1MSwiZGF0YWJhc2VfaWQiOiI1ZjkwNDYxNi1kMTA4LTQ4Y2ItYjdiNy0wMWI2MjgyMzUzYmYifQ.7JXlfhDgDMJvOkpxBZKrpb61wK8vSHI_xLtVv0UrFeuz4mzgdiS9g9avsar3zeS5JVarcInYMhJQdlclRnZMxA
+  REPLIT_DB_URL=https://kv.replit.com/v0/eyJhbGciOiJIUzUxMiIsImlzcyI6ImNvbm1hbiIsImtpZCI6InByb2Q6MSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjb25tYW4iLCJleHAiOjE3NzQxNDE0OTMsImlhdCI6MTc3NDAyOTg5MywiZGF0YWJhc2VfaWQiOiI1ZjkwNDYxNi1kMTA4LTQ4Y2ItYjdiNy0wMWI2MjgyMzUzYmYifQ.qbFqZreMFvUIhIOa3vdwurt-pxFt3UIqy-L_TTRfqF8E3FfBfF4hD8J9_JF7iJ81W-wyoP_9kj174iC_Y9wnLQ
   REPLIT_DEV_DOMAIN=5f904616-d108-48cb-b7b7-01b6282353bf-00-1t0zvtdbpqc4d.kirk.replit.dev
   REPLIT_DOMAINS=5f904616-d108-48cb-b7b7-01b6282353bf-00-1t0zvtdbpqc4d.kirk.replit.dev
   REPL_ID=5f904616-d108-48cb-b7b7-01b6282353bf
@@ -122,15 +116,15 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
   auto_trade_settings.json: 257 bytes, modified 2026-03-20 16:23:07
   auto_trading_sliders.png: 4,016 bytes, modified 2026-03-18 23:47:57
   background_runner.py: 7,567 bytes, modified 2026-03-20 07:38:38
-  brti_cnn_lstm.pth: 2,314,039 bytes, modified 2026-03-20 17:09:08
-  brti_cnn_lstm_10m.pth: 2,314,127 bytes, modified 2026-03-20 17:06:48
-  brti_xgboost.pkl: 1,046,988 bytes, modified 2026-03-20 17:09:04
-  brti_xgboost_15s.pkl: 107,889 bytes, modified 2026-03-20 17:03:27
-  brti_xgboost_60s.pkl: 111,439 bytes, modified 2026-03-20 17:03:27
+  brti_cnn_lstm.pth: 2,314,039 bytes, modified 2026-03-20 17:27:46
+  brti_cnn_lstm_10m.pth: 2,314,127 bytes, modified 2026-03-20 17:27:23
+  brti_xgboost.pkl: 1,070,380 bytes, modified 2026-03-20 17:27:38
+  brti_xgboost_15s.pkl: 111,237 bytes, modified 2026-03-20 17:27:24
+  brti_xgboost_60s.pkl: 130,428 bytes, modified 2026-03-20 17:27:25
   brti_xgboost_magnitude.pkl: 117,993 bytes, modified 2026-03-20 13:11:41
-  daily_report_2026-03-20.md: 21,150 bytes, modified 2026-03-20 17:08:17
+  daily_report_2026-03-20.md: 23,331 bytes, modified 2026-03-20 17:11:50
   github_auto_push.py: 10,138 bytes, modified 2026-03-20 07:38:33
-  github_push_log.json: 22,062 bytes, modified 2026-03-20 17:08:43
+  github_push_log.json: 24,035 bytes, modified 2026-03-20 17:12:23
   main.py: 96 bytes, modified 2026-03-07 00:48:06
   pyproject.toml: 90,964 bytes, modified 2026-03-13 00:56:26
   replit.md: 9,301 bytes, modified 2026-03-20 16:33:43
@@ -236,111 +230,22 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
 ## Application Logs (latest)
 
 ```
-=== Start_application_20260320_161958_125.log ===
-<workflow>
-<workflow_name>Start application</workflow_name>
-<status>RUNNING</status><run_id>GAsHGR15XAz-9wtgy8jc0</run_id><timestamp>2026-03-20T16:19:58.080480+00:00</timestamp>
-<logs>[1] 2121
-[16:19:21] background_runner: starting — loading app.py engine
-Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
-[github_auto_push] Starting daily auto-push loop (interval: 86400s)
-[github_auto_push] Background thread started
-[16:19:22] background_runner: github auto-push thread started
-[16:19:22] background_runner: entering keep-alive loop
-  You can now view your Streamlit app in your browser.
-  Local URL: http://localhost:5000
-  Network URL: http://172.31.100.130:5000
-  External URL: http://35.247.40.112:5000
-  [2026-03-20 16:19:22 UTC] daily_reports/daily_report_2026-03-20.md: 200 OK
-  [2026-03-20 16:19:22 UTC] auto_trade_settings.json: 200 OK
-  [2026-03-20 16:19:22 UTC] app.py: 200 OK
-  [2026-03-20 16:19:22 UTC] background_runner.py: 200 OK
-  [2026-03-20 16:19:22 UTC] replit.md: 200 OK
-  [2026-03-20 16:19:22 UTC] github_auto_push.py: 200 OK
-  [2026-03-20 16:19:22 UTC] push_log: 200 OK
-[2026-03-20 16:19:22 UTC] Daily push complete: 6 succeeded, 0 failed</logs>
-</workflow>
-
-
-=== Start_application_20260320_162422_910.log ===
-<workflow>
-<workflow_name>Start application</workflow_name>
-<status>RUNNING</status><run_id>GAsHGR15XAz-9wtgy8jc0</run_id><timestamp>2026-03-20T16:24:22.870643+00:00</timestamp>
-<logs>2026-03-20 16:22:27.493 Thread 'streamlit-startup': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2026-03-20 16:22:32.496 Thread 'streamlit-startup': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-[16:24:22] background_runner alive — threads: ['MainThread', 'keep-alive', 'Thread-1 (_bg_data_loop)', 'github-auto-push', 'Thread-2 (run_forever)', 'Thread-3 (_bobby_thread_target)', 'Thread-4 (_run_safe_shutdown_loop)', 'Thread-5 (_ensemble_thread_target)', 'auto-trader', 'Thread-6 (_ensemble_deep_inference_loop)', 'ensemble-trainer']</logs>
-</workflow>
-
-
-=== Start_application_20260320_164828_698.log ===
-<workflow>
-<workflow_name>Start application</workflow_name>
-<status>RUNNING</status><run_id>TmfLhqpKps44vw9XW9uHm</run_id><timestamp>2026-03-20T16:48:28.660635+00:00</timestamp>
-<logs>[1] 6465
-[16:47:53] background_runner: starting — loading app.py engine
-Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
-[github_auto_push] Starting daily auto-push loop (interval: 86400s)
-[github_auto_push] Background thread started
-[16:47:54] background_runner: github auto-push thread started
-[16:47:54] background_runner: entering keep-alive loop
-  You can now view your Streamlit app in your browser.
-  Local URL: http://localhost:5000
-  Network URL: http://172.31.100.130:5000
-  External URL: http://35.247.40.112:5000
-  [2026-03-20 16:47:54 UTC] daily_reports/daily_report_2026-03-20.md: 200 OK
-  [2026-03-20 16:47:54 UTC] auto_trade_settings.json: 200 OK
-  [2026-03-20 16:47:54 UTC] app.py: 200 OK
-  [2026-03-20 16:47:54 UTC] background_runner.py: 200 OK
-  [2026-03-20 16:47:54 UTC] replit.md: 200 OK
-  [2026-03-20 16:47:54 UTC] github_auto_push.py: 200 OK
-  [2026-03-20 16:47:54 UTC] daily_reports/logs/2026-03-20_Start_application_20260320_161958_125.log: 200 OK
-  [2026-03-20 16:47:54 UTC] daily_reports/logs/2026-03-20_Start_application_20260320_162422_910.log: 200 OK
-  [2026-03-20 16:47:54 UTC] push_log: 200 OK
-[2026-03-20 16:47:54 UTC] Daily push complete: 8 succeeded, 0 failed</logs>
-</workflow>
-
-
-=== Start_application_20260320_170840_592.log ===
-<workflow>
-<workflow_name>Start application</workflow_name>
-<status>RUNNING</status><run_id>_K2__bxgPuEPM_5lhigi_</run_id><timestamp>2026-03-20T17:08:40.551169+00:00</timestamp>
-<logs>[1] 9687
-[17:08:16] background_runner: starting — loading app.py engine
-Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
-[github_auto_push] Starting daily auto-push loop (interval: 86400s)
-[github_auto_push] Background thread started
-[17:08:16] background_runner: github auto-push thread started
-[17:08:16] background_runner: entering keep-alive loop
-  You can now view your Streamlit app in your browser.
-  Local URL: http://localhost:5000
-  Network URL: http://172.31.100.130:5000
-  External URL: http://35.247.40.112:5000
-  [2026-03-20 17:08:16 UTC] daily_reports/daily_report_2026-03-20.md: 200 OK
-  [2026-03-20 17:08:16 UTC] auto_trade_settings.json: 200 OK
-  [2026-03-20 17:08:16 UTC] app.py: 200 OK
-  [2026-03-20 17:08:16 UTC] background_runner.py: 200 OK
-  [2026-03-20 17:08:16 UTC] replit.md: 200 OK
-  [2026-03-20 17:08:16 UTC] github_auto_push.py: 200 OK
-  [2026-03-20 17:08:16 UTC] daily_reports/logs/2026-03-20_Start_application_20260320_161958_125.log: 200 OK
-  [2026-03-20 17:08:16 UTC] daily_reports/logs/2026-03-20_Start_application_20260320_162422_910.log: 200 OK</logs>
-</workflow>
-
-
+No logs found
 ```
 
 ---
 
 ## Push History
 
-Total pushes to date: 13
-Last push: 2026-03-20 17:08:16 UTC
+Total pushes to date: 14
+Last push: 2026-03-20 17:11:50 UTC
 
-- 2026-03-20 16:47:54 UTC: 8 pushed, 0 failed
 - 2026-03-20 16:52:47 UTC: 9 pushed, 0 failed
 - 2026-03-20 16:55:25 UTC: 9 pushed, 0 failed
 - 2026-03-20 17:04:46 UTC: 9 pushed, 0 failed
 - 2026-03-20 17:08:16 UTC: 9 pushed, 0 failed
+- 2026-03-20 17:11:50 UTC: 10 pushed, 0 failed
 
 ---
 
-*Auto-generated by github_auto_push.py at 2026-03-20 17:11:50 UTC*
+*Auto-generated by github_auto_push.py at 2026-03-20 18:05:07 UTC*
