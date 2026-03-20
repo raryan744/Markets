@@ -6286,11 +6286,10 @@ _PT_SINGLETON = [None]
 _PT_SINGLETON_LOCK = threading.Lock()
 
 _PT_LEVELS = [
-    {"qty": 1, "target_cents": 40},
-    {"qty": 2, "target_cents": 35},
-    {"qty": 2, "target_cents": 30},
+    {"qty": 1, "target_cents": 40, "limit_cents": 41.75},   # 1.75¢ buffer
+    {"qty": 2, "target_cents": 35, "limit_cents": 37.25},   # 2.25¢ buffer
+    {"qty": 2, "target_cents": 30, "limit_cents": 33.00},   # 3.00¢ buffer
 ]
-_PT_BUFFER_CENTS = 1
 _PT_TP_MULT = 1.20
 _PT_RISK_CAP = 0.08
 _PT_POLL_SEC = 8
@@ -6501,9 +6500,10 @@ def _pt_process_side(s: dict, side: str, price_frac: float,
         for i, level in enumerate(_PT_LEVELS):
             if filled[i]:
                 continue
-            trigger = level["target_cents"] + _PT_BUFFER_CENTS
+            trigger = level["limit_cents"]  # limit buy price (includes per-level buffer)
             if price_cents <= trigger:
-                fill_cents = min(price_cents + 1, trigger)
+                # Simulating a resting limit order: fills at the limit price (maker)
+                fill_cents = round(level["limit_cents"])
                 fill_frac = fill_cents / 100.0
                 qty = level["qty"]
                 cost_cents = qty * fill_cents
@@ -7909,8 +7909,10 @@ _render_ensemble_tab()
 
 st.divider()
 st.subheader("📋 DCA Paper Trader — Both Sides (KXBTC15M)")
-st.caption("Mirrors YES + NO sides independently. Buys 1@40¢ · 2@35¢ · 2@30¢. Exits at 20% TP. "
-           "First 10 min = entries open · Last 5 min = exits only. Kalshi fees applied.")
+st.caption("Mirrors YES + NO sides independently. "
+           "Limit buys: 1@41.75¢ (40¢ target) · 2@37.25¢ (35¢ target) · 2@33.00¢ (30¢ target). "
+           "Exits at 20% TP. First 10 min = entries open · Last 5 min + final 60s = exits only. "
+           "Maker fee on entry, taker fee on exit.")
 
 _pt_sf = _pt_read_state_file()
 
