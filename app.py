@@ -5456,11 +5456,16 @@ def _auto_trader_loop():
 
             side = "yes" if direction == "UP" else "no"
 
+            _is_paper_now = state["paper_mode"][0]
             if bal is None:
-                entry = {"ts": datetime.now(timezone.utc), "msg": "Balance unavailable — skipping trade", "type": "error"}
-                state["log"].appendleft(entry)
-                time.sleep(2)
-                continue
+                if not _is_paper_now:
+                    entry = {"ts": datetime.now(timezone.utc), "msg": "Balance unavailable — skipping trade", "type": "error"}
+                    state["log"].appendleft(entry)
+                    time.sleep(2)
+                    continue
+                else:
+                    # Paper mode: simulate $1,000 paper balance so missing API creds don't block trading
+                    bal = 100_000  # 100,000 cents = $1,000
 
             # ── Fresh quote right before order placement ──────────────────
             try:
@@ -5756,8 +5761,11 @@ def _auto_trader_loop():
                         pass
                     return 0
 
-                def _market_buy_one(price_cents, _tk=_bound_ticker, _sd=_bound_side):
+                def _market_buy_one(price_cents, _tk=_bound_ticker, _sd=_bound_side, _paper=_is_paper):
                     """Buy 1 extra contract. Returns (fill_price, fee_cents) or (None, 0)."""
+                    if _paper:
+                        # Paper mode: simulate fill at requested price, no real order
+                        return price_cents, 0
                     _result, _err = kalshi_place_order(
                         _tk, "buy", _sd, 1, price_cents=price_cents)
                     if _result and "order" in _result:
@@ -6943,12 +6951,20 @@ def _render_ensemble_tab():
                 _run_cnt, _run_dir = _db_run_count()
             _run_str = f" · Run: **{_run_cnt}/11** {_run_dir}" if _run_dir and _run_dir != "NEUTRAL" else ""
             _pos_headline = _read_position()
-            _paper_tag = " · **PAPER MODE**" if at_paper else ""
+            _paper_tag = " · **PAPER MODE**" if at_paper else " · **LIVE MODE**"
+            # Check if hour gate is currently blocking
+            _oh_on = _disk_settings.get("overnight_skip_enabled", True)
+            _ah_now = _disk_settings.get("allowed_hours", [0, 1, 2, 3, 4, 22])
+            _cur_utc_hr = datetime.now(timezone.utc).hour
+            _hour_blocked = _oh_on and _ah_now and (_cur_utc_hr not in _ah_now)
+            _hour_tag = f" · ⏱ Hour gate blocking ({_cur_utc_hr:02d}:xx UTC — allowed: {_ah_now})" if _hour_blocked else ""
             if at_enabled:
                 if _pos_headline and _pos_headline.get("status"):
                     _pha = _pos_headline["status"]
                     _pha_short = {"entering": "Entering", "filled": "Filled", "trailing": "Trailing"}.get(_pha, _pha)
                     st.info(f"Status: **{at_status}** · Position **{_pha_short}**{_run_str}{_paper_tag}")
+                elif _hour_blocked:
+                    st.warning(f"Status: **{at_status}** · Monitoring signals{_run_str}{_paper_tag}{_hour_tag}")
                 else:
                     st.success(f"Status: **{at_status}** · Monitoring signals{_run_str}{_paper_tag}")
             else:
