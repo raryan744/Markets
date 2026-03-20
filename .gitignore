@@ -1,0 +1,21 @@
+# Trained model weights — regenerate automatically on startup from live data
+*.pth
+*.pkl
+
+# Replit environment
+.replit
+replit.nix
+.local/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pythonlibs/
+
+# Runtime temp files
+/tmp/
+*.log
+
+# Environment secrets — never commit
+.env
