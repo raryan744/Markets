@@ -3326,7 +3326,7 @@ def _seed_cnn_10m_from_db():
             )
             rows = cur.fetchall()
 
-        threshold = _TRAIN_NEUTRAL_THRESHOLD
+        threshold = _CNN_NEUTRAL_THRESHOLD  # 20bps — correct scale for 10-minute contract moves
 
         loaded = 0
         for img_bytes, snap_ts_f, price_before, price_after in rows:
