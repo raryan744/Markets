@@ -248,6 +248,13 @@ except Exception as exc:
     traceback.print_exc()
     sys.exit(1)
 
+try:
+    import github_auto_push
+    github_auto_push.start_background()
+    _log("background_runner: github auto-push thread started")
+except Exception as e:
+    _log(f"background_runner: github auto-push failed to start: {e}")
+
 # Keep the process alive; background threads are daemons but this process must live
 _log("background_runner: entering keep-alive loop")
 iteration = 0
