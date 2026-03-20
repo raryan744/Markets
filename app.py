@@ -1116,6 +1116,31 @@ def db_init_training_samples():
                         imbalance      DOUBLE PRECISION
                     )
                 """)
+                # Add all extended feature columns (safe: ADD COLUMN IF NOT EXISTS is idempotent)
+                for _col in [
+                    "brti_ret_5 DOUBLE PRECISION",
+                    "brti_ret_10 DOUBLE PRECISION",
+                    "brti_ret_30 DOUBLE PRECISION",
+                    "vt_velocity DOUBLE PRECISION",
+                    "microprice DOUBLE PRECISION",
+                    "spread_pct DOUBLE PRECISION",
+                    "bid1_vol DOUBLE PRECISION",
+                    "ask1_vol DOUBLE PRECISION",
+                    "bid5_vol DOUBLE PRECISION",
+                    "ask5_vol DOUBLE PRECISION",
+                    "bid20_vol DOUBLE PRECISION",
+                    "ask20_vol DOUBLE PRECISION",
+                    "depth_ratio_1 DOUBLE PRECISION",
+                    "depth_ratio_5 DOUBLE PRECISION",
+                    "vol_30 DOUBLE PRECISION",
+                    "vol_60 DOUBLE PRECISION",
+                    "rsi_7 DOUBLE PRECISION",
+                    "rsi_14 DOUBLE PRECISION",
+                    "rsi_21 DOUBLE PRECISION",
+                    "vwap_dev DOUBLE PRECISION",
+                    "imbalance_velocity DOUBLE PRECISION",
+                ]:
+                    cur.execute(f"ALTER TABLE training_samples ADD COLUMN IF NOT EXISTS {_col}")
                 cur.execute("""
                     ALTER TABLE book_image_snapshots
                     ADD COLUMN IF NOT EXISTS label SMALLINT
@@ -1185,7 +1210,13 @@ def _db_persist_labeled_batch(tab_rows: list, img_updates: list):
                         cur,
                         """INSERT INTO training_samples
                            (ts, label, v_t, c_t, exchanges, hawkes, brti_return,
-                            bid_ask_spread, bid_depth_10, ask_depth_10, imbalance)
+                            bid_ask_spread, bid_depth_10, ask_depth_10, imbalance,
+                            brti_ret_5, brti_ret_10, brti_ret_30, vt_velocity,
+                            microprice, spread_pct,
+                            bid1_vol, ask1_vol, bid5_vol, ask5_vol, bid20_vol, ask20_vol,
+                            depth_ratio_1, depth_ratio_5,
+                            vol_30, vol_60, rsi_7, rsi_14, rsi_21,
+                            vwap_dev, imbalance_velocity)
                            VALUES %s""",
                         [(
                             datetime.fromtimestamp(
@@ -1198,6 +1229,17 @@ def _db_persist_labeled_batch(tab_rows: list, img_updates: list):
                             _to_py(r.get("bid_ask_spread")),
                             _to_py(r.get("bid_depth_10")), _to_py(r.get("ask_depth_10")),
                             _to_py(r.get("imbalance")),
+                            _to_py(r.get("brti_ret_5")), _to_py(r.get("brti_ret_10")),
+                            _to_py(r.get("brti_ret_30")), _to_py(r.get("vt_velocity")),
+                            _to_py(r.get("microprice")), _to_py(r.get("spread_pct")),
+                            _to_py(r.get("bid1_vol")), _to_py(r.get("ask1_vol")),
+                            _to_py(r.get("bid5_vol")), _to_py(r.get("ask5_vol")),
+                            _to_py(r.get("bid20_vol")), _to_py(r.get("ask20_vol")),
+                            _to_py(r.get("depth_ratio_1")), _to_py(r.get("depth_ratio_5")),
+                            _to_py(r.get("vol_30")), _to_py(r.get("vol_60")),
+                            _to_py(r.get("rsi_7")), _to_py(r.get("rsi_14")),
+                            _to_py(r.get("rsi_21")), _to_py(r.get("vwap_dev")),
+                            _to_py(r.get("imbalance_velocity")),
                         ) for r in tab_rows],
                     )
                 if img_updates:
@@ -2906,7 +2948,7 @@ _ENSEMBLE_SNAPSHOT_INTERVAL = 30
 _CNN_SEQ_LEN = 10          # temporal frames fed to CNN-LSTM (10 × ~1s = ~10s window)
 _TRAIN_HORIZON_SECS = 10
 _CNN_TRAIN_HORIZON_SECS = 600   # CNN-LSTM trains on 10-minute forward label (matches empirical edge horizon)
-_TRAIN_NEUTRAL_THRESHOLD = 0.00035
+_TRAIN_NEUTRAL_THRESHOLD = 0.002   # 20bps — minimum move meaningful for 15-min contract economics (was 3.5bps noise floor)
 _CNN_CONFIDENCE_THRESHOLD = 0.45
 _TRAIN_MIN_SAMPLES = 50
 _TRAIN_XGB_INTERVAL = 120
@@ -3011,7 +3053,13 @@ def _seed_training_from_db():
             with conn.cursor() as cur:
                 cur.execute(
                     """SELECT label, v_t, c_t, exchanges, hawkes, brti_return,
-                              bid_ask_spread, bid_depth_10, ask_depth_10, imbalance
+                              bid_ask_spread, bid_depth_10, ask_depth_10, imbalance,
+                              brti_ret_5, brti_ret_10, brti_ret_30, vt_velocity,
+                              microprice, spread_pct,
+                              bid1_vol, ask1_vol, bid5_vol, ask5_vol, bid20_vol, ask20_vol,
+                              depth_ratio_1, depth_ratio_5,
+                              vol_30, vol_60, rsi_7, rsi_14, rsi_21,
+                              vwap_dev, imbalance_velocity
                        FROM training_samples
                        ORDER BY id ASC"""
                 )
@@ -3027,6 +3075,27 @@ def _seed_training_from_db():
                         "bid_depth_10": row[7] or 0.0,
                         "ask_depth_10": row[8] or 0.0,
                         "imbalance": row[9] or 0.0,
+                        "brti_ret_5": row[10] or 0.0,
+                        "brti_ret_10": row[11] or 0.0,
+                        "brti_ret_30": row[12] or 0.0,
+                        "vt_velocity": row[13] or 0.0,
+                        "microprice": row[14] or 0.0,
+                        "spread_pct": row[15] or 0.0,
+                        "bid1_vol": row[16] or 0.0,
+                        "ask1_vol": row[17] or 0.0,
+                        "bid5_vol": row[18] or 0.0,
+                        "ask5_vol": row[19] or 0.0,
+                        "bid20_vol": row[20] or 0.0,
+                        "ask20_vol": row[21] or 0.0,
+                        "depth_ratio_1": row[22] or 0.0,
+                        "depth_ratio_5": row[23] or 0.0,
+                        "vol_30": row[24] or 0.0,
+                        "vol_60": row[25] or 0.0,
+                        "rsi_7": row[26] or 0.0,
+                        "rsi_14": row[27] or 0.0,
+                        "rsi_21": row[28] or 0.0,
+                        "vwap_dev": row[29] or 0.0,
+                        "imbalance_velocity": row[30] or 0.0,
                     }
                     with ts["lock"]:
                         ts["labeled_tabular"].append(tab_row)
@@ -3649,38 +3718,42 @@ def _train_xgboost_mtf(horizon_key: str, labeled_key: str, count_key: str,
 
 def _train_xgboost_online():
     import xgboost as xgb
-    from sklearn.model_selection import cross_val_score
+    from sklearn.model_selection import TimeSeriesSplit
     import joblib
 
     ts = _training_state()
-    _XGB_MAX_DIRECTIONAL = 30_000   # UP and DOWN samples each
+    _XGB_MAX_PER_CLASS = 20_000
     with ts["lock"]:
         all_data = list(ts["labeled_tabular"])
     if len(all_data) < _TRAIN_MIN_SAMPLES:
         return
 
-    # Build directional-only subsample: UP + DOWN only, no NEUTRAL.
-    # NEUTRAL is not a tradeable signal so we don't want model capacity wasted on it.
-    # NEUTRAL in inference = "low confidence in UP or DOWN", gated by _CNN_CONFIDENCE_THRESHOLD.
-    down_rows = [r for r in all_data if int(r.get("label", 1)) == 0]
-    up_rows   = [r for r in all_data if int(r.get("label", 1)) == 2]
+    # 3-class model: DOWN=0, NEUTRAL=1, UP=2
+    # Include NEUTRAL so the model learns to output genuine neutral probability
+    # instead of always splitting confidence between UP and DOWN (binary inflation bug).
+    down_rows    = [r for r in all_data if int(r.get("label", 1)) == 0]
+    neutral_rows = [r for r in all_data if int(r.get("label", 1)) == 1]
+    up_rows      = [r for r in all_data if int(r.get("label", 1)) == 2]
     if not down_rows or not up_rows:
         return
 
     def _sample(rows, n):
-        idx = np.random.choice(len(rows), min(n, len(rows)), replace=False)
-        return [rows[i] for i in idx]
+        # Time-ordered sample: prefer recent rows, cap at n
+        return rows[-n:] if len(rows) > n else rows
 
-    balanced = _sample(down_rows, _XGB_MAX_DIRECTIONAL) + _sample(up_rows, _XGB_MAX_DIRECTIONAL)
-    np.random.shuffle(balanced)
+    # Balance: cap each class, keep time order for walk-forward split
+    balanced = (
+        _sample(down_rows, _XGB_MAX_PER_CLASS) +
+        _sample(neutral_rows, _XGB_MAX_PER_CLASS) +
+        _sample(up_rows, _XGB_MAX_PER_CLASS)
+    )
+    # Sort by sample timestamp so walk-forward split is meaningful
+    balanced.sort(key=lambda r: r.get("_sample_ts", 0.0))
 
     df = pd.DataFrame(balanced)
     feature_cols = [c for c in df.columns if c not in _EXCLUDED_FEATURE_COLS]
-    X = df[feature_cols].values.astype(np.float32)
-    # Remap labels to sequential 0/1 for binary XGBoost (DOWN=0→0, UP=2→1)
-    # sklearn/XGBoost require labels [0, 1] for binary, not [0, 2]
-    y_raw = df["label"].values.astype(int)
-    y = np.where(y_raw == 2, 1, 0)   # DOWN→0, UP→1
+    X = df[feature_cols].fillna(0.0).values.astype(np.float32)
+    y = df["label"].values.astype(int)   # 0=DOWN, 1=NEUTRAL, 2=UP
 
     model = xgb.XGBClassifier(
         n_estimators=150,
@@ -3688,24 +3761,33 @@ def _train_xgboost_online():
         learning_rate=0.08,
         subsample=0.8,
         colsample_bytree=0.8,
-        objective="binary:logistic",
-        eval_metric="logloss",
+        objective="multi:softprob",
+        num_class=3,
+        eval_metric="mlogloss",
         use_label_encoder=False,
         verbosity=0,
         n_jobs=1,
     )
-    model.fit(X, y)  # binary: DOWN=0, UP=1; prob_neutral always 0
+    model.fit(X, y)
 
-    # Skip cross-validation for large datasets — it triples training time
-    # for a metric we don't act on; just report in-sample accuracy instead.
+    # Walk-forward validation: train on first 80%, test on last 20%
+    # This gives an honest out-of-sample accuracy estimate without leaking future data.
     acc = None
     try:
-        if len(balanced) >= 1000:
-            acc = float((model.predict(X) == y).mean())
-        elif len(balanced) >= 100:
-            scores = cross_val_score(model, X, y, cv=min(3, len(unique_classes)),
-                                     scoring="accuracy")
-            acc = float(scores.mean())
+        n = len(X)
+        if n >= 200:
+            split = int(n * 0.8)
+            X_train, X_test = X[:split], X[split:]
+            y_train, y_test = y[:split], y[split:]
+            wf_model = xgb.XGBClassifier(
+                n_estimators=150, max_depth=5, learning_rate=0.08,
+                subsample=0.8, colsample_bytree=0.8,
+                objective="multi:softprob", num_class=3,
+                eval_metric="mlogloss", use_label_encoder=False,
+                verbosity=0, n_jobs=1,
+            )
+            wf_model.fit(X_train, y_train)
+            acc = float((wf_model.predict(X_test) == y_test).mean())
     except Exception:
         pass
 
