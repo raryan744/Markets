@@ -2948,7 +2948,8 @@ _ENSEMBLE_SNAPSHOT_INTERVAL = 30
 _CNN_SEQ_LEN = 10          # temporal frames fed to CNN-LSTM (10 × ~1s = ~10s window)
 _TRAIN_HORIZON_SECS = 10
 _CNN_TRAIN_HORIZON_SECS = 600   # CNN-LSTM trains on 10-minute forward label (matches empirical edge horizon)
-_TRAIN_NEUTRAL_THRESHOLD = 0.002   # 20bps — minimum move meaningful for 15-min contract economics (was 3.5bps noise floor)
+_TRAIN_NEUTRAL_THRESHOLD = 0.0005  # 5bps — filters bid-ask noise for 10s/15s/60s XGBoost windows (~10% directional)
+_CNN_NEUTRAL_THRESHOLD  = 0.002   # 20bps — minimum move meaningful for 15-min contract economics (CNN-LSTM 10-min only)
 _CNN_CONFIDENCE_THRESHOLD = 0.45
 _TRAIN_MIN_SAMPLES = 50
 _TRAIN_XGB_INTERVAL = 120
@@ -3600,7 +3601,8 @@ def _resolve_cnn_10m_labels():
                 if future_price is not None and best_dist < 30.0:
                     p_now = s["price_at_capture"]
                     ret_10m = (future_price - p_now) / p_now if p_now > 0 else 0.0
-                    label = _label_from_returns(p_now, future_price)
+                    # Use CNN-specific 20bps threshold — 10-minute moves need meaningful magnitude
+                    label = 2 if ret_10m > _CNN_NEUTRAL_THRESHOLD else (0 if ret_10m < -_CNN_NEUTRAL_THRESHOLD else 1)
                     # Image entry for CNN-LSTM direction training
                     raw_img = s["book_image"]
                     frame_np = raw_img.reshape(500, 2) if hasattr(raw_img, "reshape") else np.array(raw_img).reshape(500, 2)
