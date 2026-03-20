@@ -3808,7 +3808,7 @@ def _train_xgboost_online():
 
 
 _TRAIN_CNN_WINDOW = 8192
-_TRAIN_CNN_10M_WINDOW = 600      # smaller window for 10-min model — faster first pass on seeded data
+_TRAIN_CNN_10M_WINDOW = 4000     # use full 48h snapshot history for 10-min model
 _TRAIN_CNN_BATCH = 32
 
 
