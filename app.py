@@ -1000,13 +1000,16 @@ def db_init_auto_trades():
                 cur.execute("""
                     ALTER TABLE auto_trades ADD COLUMN IF NOT EXISTS fee_cents INTEGER DEFAULT 0
                 """)
+                cur.execute("""
+                    ALTER TABLE auto_trades ADD COLUMN IF NOT EXISTS is_paper BOOLEAN DEFAULT FALSE
+                """)
     except Exception:
         pass
     finally:
         conn.close()
 
 
-def db_insert_auto_trade(ticker, direction, signal_confidence, action, contracts, price_cents=None, order_id=None, pnl_cents=None, fee_cents=0):
+def db_insert_auto_trade(ticker, direction, signal_confidence, action, contracts, price_cents=None, order_id=None, pnl_cents=None, fee_cents=0, is_paper=False):
     if not DATABASE_URL:
         return
     conn = _db_conn()
@@ -1017,10 +1020,10 @@ def db_insert_auto_trade(ticker, direction, signal_confidence, action, contracts
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO auto_trades (ts, ticker, direction, signal_confidence, action, contracts, price_cents, order_id, pnl_cents, fee_cents)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO auto_trades (ts, ticker, direction, signal_confidence, action, contracts, price_cents, order_id, pnl_cents, fee_cents, is_paper)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
-                    (datetime.now(timezone.utc).isoformat(), ticker, direction, signal_confidence, action, contracts, price_cents, order_id, pnl_cents, fee_cents or 0),
+                    (datetime.now(timezone.utc).isoformat(), ticker, direction, signal_confidence, action, contracts, price_cents, order_id, pnl_cents, fee_cents or 0, bool(is_paper)),
                 )
     except Exception:
         pass
@@ -3721,6 +3724,7 @@ def _train_xgboost_online():
 
 
 _TRAIN_CNN_WINDOW = 8192
+_TRAIN_CNN_10M_WINDOW = 600      # smaller window for 10-min model — faster first pass on seeded data
 _TRAIN_CNN_BATCH = 32
 
 
@@ -3843,7 +3847,7 @@ def _train_cnn_lstm_10m_online():
         ens["deep_optimizer_10m"][0] = optimizer
 
     all_data.sort(key=lambda d: d.get("ts", 0.0))
-    data = all_data[-(_TRAIN_CNN_WINDOW + _CNN_SEQ_LEN):]
+    data = all_data[-(_TRAIN_CNN_10M_WINDOW + _CNN_SEQ_LEN):]
     T = _CNN_SEQ_LEN
     sequences = []
     for end in range(T, len(data) + 1):
@@ -4810,6 +4814,7 @@ def _read_shared_ui_state() -> dict:
         return {}
 
 
+@st.cache_data(ttl=5)
 def _db_ensemble_ticks(limit=300) -> list:
     if not DATABASE_URL:
         return []
@@ -5148,6 +5153,11 @@ def _write_at_settings(state: dict):
             "cooldown": int(state["cooldown"][0]),
             "min_edge": int(state["min_edge"][0]),
             "min_profit_margin": int(state["min_profit_margin"][0]),
+            "paper_mode": bool(state["paper_mode"][0]),
+            "allowed_hours": list(state["allowed_hours"][0]),
+            "overnight_skip_enabled": bool(state["overnight_skip_enabled"][0]),
+            "max_dd_percent": float(state["max_dd_percent"][0]),
+            "kelly_fraction": float(state["kelly_fraction"][0]),
         }
         with open(_AT_SETTINGS_FILE, "w") as f:
             json.dump(data, f)
@@ -5161,10 +5171,17 @@ def _auto_trader_state():
     return {
         "enabled": [_s.get("enabled", False)],   # safe default: OFF
         "contracts": [_s.get("contracts", 1)],
-        "confidence_threshold": [_s.get("confidence_threshold", 0.80)],
+        "confidence_threshold": [_s.get("confidence_threshold", 0.82)],
         "cooldown": [_s.get("cooldown", 120)],
-        "min_edge": [_s.get("min_edge", 55)],
+        "min_edge": [_s.get("min_edge", 32)],
         "min_profit_margin": [_s.get("min_profit_margin", 10)],
+        "paper_mode": [_s.get("paper_mode", False)],
+        "allowed_hours": [_s.get("allowed_hours", [0, 1, 2, 3, 4, 22])],
+        "overnight_skip_enabled": [_s.get("overnight_skip_enabled", True)],
+        "max_dd_percent": [_s.get("max_dd_percent", 5.0)],
+        "kelly_fraction": [_s.get("kelly_fraction", 0.65)],
+        "dd_paused": [False],
+        "session_pnl_cents": [0],
         "last_trade_ts": [0.0],
         "thread": [None],
         "stop_flag": [False],
@@ -5205,6 +5222,11 @@ def _auto_trader_loop():
                     state["contracts"][0] = _s.get("contracts", state["contracts"][0])
                     state["confidence_threshold"][0] = _s.get("confidence_threshold", state["confidence_threshold"][0])
                     state["cooldown"][0] = _s.get("cooldown", state["cooldown"][0])
+                    state["paper_mode"][0] = _s.get("paper_mode", state["paper_mode"][0])
+                    state["allowed_hours"][0] = _s.get("allowed_hours", state["allowed_hours"][0])
+                    state["overnight_skip_enabled"][0] = _s.get("overnight_skip_enabled", state["overnight_skip_enabled"][0])
+                    state["max_dd_percent"][0] = _s.get("max_dd_percent", state["max_dd_percent"][0])
+                    state["kelly_fraction"][0] = _s.get("kelly_fraction", state["kelly_fraction"][0])
 
             ens = get_ensemble_latest()
             pred = ens.get("prediction")
@@ -5224,6 +5246,34 @@ def _auto_trader_loop():
 
             if not state["enabled"][0]:
                 time.sleep(_FAST_SLEEP)
+                continue
+
+            # ── Hour gate ────────────────────────────────────────────────────
+            # Only trade during statistically profitable UTC hours.
+            _overnight_skip_on = state["overnight_skip_enabled"][0]
+            _allowed_hours = state["allowed_hours"][0]
+            if _overnight_skip_on and _allowed_hours:
+                _cur_hour = datetime.now(timezone.utc).hour
+                if _cur_hour not in _allowed_hours:
+                    _next_allowed = min(
+                        (h for h in _allowed_hours if h > _cur_hour), default=min(_allowed_hours) + 24
+                    )
+                    state["log"].appendleft({
+                        "ts": datetime.now(timezone.utc),
+                        "msg": f"Hour gate: {_cur_hour:02d}:xx UTC not in allowed hours {_allowed_hours} — next at {_next_allowed % 24:02d}:00",
+                        "type": "info"
+                    })
+                    time.sleep(30)
+                    continue
+
+            # ── Drawdown circuit breaker ─────────────────────────────────────
+            if state["dd_paused"][0]:
+                state["log"].appendleft({
+                    "ts": datetime.now(timezone.utc),
+                    "msg": "DD circuit breaker ACTIVE — auto-trader paused. Re-enable manually to reset.",
+                    "type": "error"
+                })
+                time.sleep(10)
                 continue
 
             now = time.time()
@@ -5435,7 +5485,21 @@ def _auto_trader_loop():
 
             # ── Rule #3: Scale contracts — 3× at ≤20c entry, 1× at 21–35c ──
             _scale = 3 if _ask_for_side <= 20 else 1
-            _trade_contracts = contracts * _scale
+            _base_contracts = contracts * _scale
+
+            # ── Kelly fraction position sizing ───────────────────────────────
+            # Kelly f = (p*b - (1-p)) / b  where b = net_upside / entry_price
+            # Size = kelly_fraction * f * bankroll / entry_price (in contracts)
+            _kelly_fraction = state["kelly_fraction"][0]
+            _bal_for_kelly = state["balance_cents"][0]
+            if _kelly_fraction > 0 and _bal_for_kelly and _bal_for_kelly > 0 and _ask_for_side > 0:
+                _b_ratio = _net_upside / _ask_for_side
+                _kelly_f = (confidence * _b_ratio - (1 - confidence)) / _b_ratio if _b_ratio > 0 else 0
+                _kelly_f = max(0.0, _kelly_f)
+                _kelly_contracts = max(1, round(_kelly_f * _kelly_fraction * _bal_for_kelly / _ask_for_side))
+                _trade_contracts = max(1, min(_base_contracts, _kelly_contracts))
+            else:
+                _trade_contracts = _base_contracts
 
             state["position_open"][0] = True
             state["last_trade_ts"][0] = time.time()
@@ -5457,10 +5521,20 @@ def _auto_trader_loop():
                 pass
 
             try:  # buy + launch exit thread
-                buy_result, buy_err = kalshi_place_order(ticker, "buy", side, _trade_contracts, price_cents=buy_limit)
-                buy_order_id = None
-                buy_price = None
-                _filled_contracts = 0
+                _is_paper = state["paper_mode"][0]
+                if _is_paper:
+                    # ── Paper mode: simulate fill, no real order ─────────────
+                    buy_result = None
+                    buy_err = None
+                    buy_order_id = f"PAPER-{int(time.time() * 1000)}"
+                    buy_price = buy_limit
+                    _filled_contracts = _trade_contracts
+                    _buy_fee = 0
+                else:
+                    buy_result, buy_err = kalshi_place_order(ticker, "buy", side, _trade_contracts, price_cents=buy_limit)
+                buy_order_id = None if not _is_paper else buy_order_id
+                buy_price = None if not _is_paper else buy_price
+                _filled_contracts = 0 if not _is_paper else _filled_contracts
 
                 def _parse_order_fill(order_dict):
                     """Return (avg_price_cents, filled_count, fee_cents) from order response.
@@ -5494,17 +5568,18 @@ def _auto_trader_loop():
                 db_insert_auto_trade(
                     ticker=ticker, direction=direction, signal_confidence=confidence,
                     action="buy", contracts=_trade_contracts, price_cents=buy_price, order_id=buy_order_id,
-                    fee_cents=_buy_fee,
+                    fee_cents=_buy_fee, is_paper=_is_paper,
                 )
+                _paper_tag = " [PAPER]" if _is_paper else ""
                 log_entry = {
                     "ts": datetime.now(timezone.utc), "ticker": ticker, "direction": direction,
-                    "confidence": confidence, "action": "buy", "contracts": _trade_contracts,
+                    "confidence": confidence, "action": f"buy{_paper_tag}", "contracts": _trade_contracts,
                     "price_cents": buy_price, "order_id": buy_order_id, "error": buy_err,
                     "filled": _filled_contracts,
                 }
                 state["log"].appendleft(log_entry)
 
-                if buy_err or buy_order_id is None:
+                if not _is_paper and (buy_err or buy_order_id is None):
                     try:
                         with open("/tmp/bobby_debug.log", "a") as _f:
                             _f.write(f"[{datetime.now(timezone.utc).isoformat()}] AUTO-TRADE BUY FAILED: {buy_err}\n")
@@ -5687,6 +5762,7 @@ def _auto_trader_loop():
                     _t_entry_ts, _t_buy_price, _t_buy_fee, _t_confidence,
                     _t_state, _t_time_remaining_fn, _t_get_live_bid_fn,
                     _t_market_sell_fn, _t_market_buy_one_fn,
+                    _t_is_paper=False,
                 ):
                     sell_order_id = None
                     sell_price = None
@@ -5872,13 +5948,19 @@ def _auto_trader_loop():
                             except Exception:
                                 pass
 
-                            sell_price, sell_order_id, _sell_fee = _t_market_sell_fn(_sell_at, count=_t_contracts)
+                            if _t_is_paper:
+                                # Paper mode: simulate sell at live bid — no real order
+                                sell_price = max(_bid, 1)
+                                sell_order_id = f"PAPER-SELL-{int(time.time() * 1000)}"
+                                _sell_fee = 0
+                            else:
+                                sell_price, sell_order_id, _sell_fee = _t_market_sell_fn(_sell_at, count=_t_contracts)
 
-                            if sell_price is None:
+                            if not _t_is_paper and sell_price is None:
                                 _sell_at2 = max(_bid - 3, 1)
                                 sell_price, sell_order_id, _sell_fee = _t_market_sell_fn(_sell_at2, count=_t_contracts)
 
-                            if sell_price is None and _remaining < 90:
+                            if not _t_is_paper and sell_price is None and _remaining < 90:
                                 sell_price, sell_order_id, _sell_fee = _t_market_sell_fn(1, count=_t_contracts)
 
                             if sell_price is None:
@@ -5919,24 +6001,43 @@ def _auto_trader_loop():
                         except Exception:
                             pass
 
+                        _sell_action = "sell [PAPER]" if _t_is_paper else "sell"
                         db_insert_auto_trade(
                             ticker=_t_ticker, direction=_t_direction, signal_confidence=_t_confidence,
-                            action="sell", contracts=_t_contracts, price_cents=sell_price,
+                            action=_sell_action, contracts=_t_contracts, price_cents=sell_price,
                             order_id=sell_order_id, pnl_cents=pnl, fee_cents=_total_fee,
+                            is_paper=_t_is_paper,
                         )
                         sell_log = {
                             "ts": datetime.now(timezone.utc), "ticker": _t_ticker, "direction": _t_direction,
-                            "confidence": _t_confidence, "action": "sell", "contracts": _t_contracts,
+                            "confidence": _t_confidence, "action": _sell_action, "contracts": _t_contracts,
                             "price_cents": sell_price, "order_id": sell_order_id, "pnl_cents": pnl, "fee_cents": _total_fee, "error": sell_err,
                         }
                         _t_state["log"].appendleft(sell_log)
 
+                        # ── Session PnL & drawdown circuit breaker ────────────
+                        if pnl is not None:
+                            _t_state["session_pnl_cents"][0] = _t_state["session_pnl_cents"][0] + pnl
+                            _max_dd_pct = _t_state["max_dd_percent"][0]
+                            _bal_now = _t_state["balance_cents"][0]
+                            if _bal_now and _bal_now > 0 and _max_dd_pct > 0:
+                                _dd_threshold = -(_max_dd_pct / 100.0) * _bal_now
+                                if _t_state["session_pnl_cents"][0] < _dd_threshold:
+                                    _t_state["dd_paused"][0] = True
+                                    _t_state["log"].appendleft({
+                                        "ts": datetime.now(timezone.utc),
+                                        "msg": f"DRAWDOWN CIRCUIT BREAKER: session PnL {_t_state['session_pnl_cents'][0]}c breached "
+                                               f"{_max_dd_pct:.1f}% DD limit ({_dd_threshold:.0f}c). Auto-trader PAUSED.",
+                                        "type": "error",
+                                    })
+
                         _t_state["last_trade_ts"][0] = time.time()
 
-                        bal = kalshi_get_balance()
-                        if bal is not None:
-                            _t_state["balance_cents"][0] = bal
-                            _t_state["balance_ts"][0] = time.time()
+                        if not _t_is_paper:
+                            bal = kalshi_get_balance()
+                            if bal is not None:
+                                _t_state["balance_cents"][0] = bal
+                                _t_state["balance_ts"][0] = time.time()
                     finally:
                         _t_state["position_open"][0] = False
                         _write_position(None)
@@ -5948,6 +6049,7 @@ def _auto_trader_loop():
                         _entry_ts, buy_price, _buy_fee, confidence,
                         state, _time_remaining_s, _get_live_bid,
                         _market_sell, _market_buy_one,
+                        _is_paper,
                     ),
                     daemon=True,
                 )
@@ -6162,6 +6264,10 @@ def _render_ensemble_tab():
     # ── CNN-LSTM 10m Directional Signal ─────────────────────────────────
     st.subheader("CNN-LSTM 10-Minute Directional Signal")
     _p10m_tick = e_pred if e_pred else {}
+    # DB-fallback predictions don't carry cnn_10m_* fields — patch from shared state
+    if not _p10m_tick.get("cnn_10m_trained") and _shared.get("prediction"):
+        _sp = _shared["prediction"]
+        _p10m_tick = {**_p10m_tick, **{k: v for k, v in _sp.items() if k.startswith("cnn_10m")}}
     _cnn10m_dir   = _p10m_tick.get("cnn_10m_direction", "NEUTRAL")
     _cnn10m_conf  = _p10m_tick.get("cnn_10m_confidence", 0.0)
     _cnn10m_p_up  = _p10m_tick.get("cnn_10m_prob_up", 0.33)
@@ -6623,8 +6729,12 @@ def _render_ensemble_tab():
                            "Hawkes λ", "P(UP)", "P(NEUTRAL)", "P(DOWN)", "v_T", "Exchanges"]
         st.dataframe(show_df.tail(100).iloc[::-1], width="stretch", hide_index=True)
     else:
-        st.info("Ensemble predictor is starting up — waiting for BobbyBRTI data from 3+ exchanges. "
-                "Predictions will appear here every second once live.")
+        _tick_shared_status = _read_shared_ui_state().get("status")
+        if _tick_shared_status == "live":
+            st.info("Loading prediction history…")
+        else:
+            st.info("Ensemble predictor is starting up — waiting for BobbyBRTI data from 3+ exchanges. "
+                    "Predictions will appear here every second once live.")
 
     st.divider()
 
@@ -6722,12 +6832,16 @@ def _render_ensemble_tab():
     if not KALSHI_AUTH_READY:
         st.warning("Kalshi API credentials not configured — auto-trading unavailable.")
     else:
-        at_col1, at_col2 = st.columns([1, 3])
+        at_col1, at_col2, at_col3 = st.columns([1, 1, 2])
         with at_col1:
             at_enabled = st.toggle("Enable Auto-Trading", value=_disk_enabled, key="at_enable_toggle")
             at_state["enabled"][0] = at_enabled
-
         with at_col2:
+            _paper_default = bool(_disk_settings.get("paper_mode", True))
+            at_paper = st.toggle("Paper Mode (no real orders)", value=_paper_default, key="at_paper_toggle")
+            at_state["paper_mode"][0] = at_paper
+
+        with at_col3:
             at_status = at_state["status"][0]
             if at_status == "idle":
                 _sh_status = _read_shared_ui_state().get("auto_trader_status")
@@ -6745,38 +6859,74 @@ def _render_ensemble_tab():
                 _run_cnt, _run_dir = _db_run_count()
             _run_str = f" · Run: **{_run_cnt}/11** {_run_dir}" if _run_dir and _run_dir != "NEUTRAL" else ""
             _pos_headline = _read_position()
+            _paper_tag = " · **PAPER MODE**" if at_paper else ""
             if at_enabled:
                 if _pos_headline and _pos_headline.get("status"):
                     _pha = _pos_headline["status"]
                     _pha_short = {"entering": "Entering", "filled": "Filled", "trailing": "Trailing"}.get(_pha, _pha)
-                    st.info(f"Status: **{at_status}** · Position **{_pha_short}**{_run_str}")
+                    st.info(f"Status: **{at_status}** · Position **{_pha_short}**{_run_str}{_paper_tag}")
                 else:
-                    st.success(f"Status: **{at_status}** · Monitoring signals{_run_str}")
+                    st.success(f"Status: **{at_status}** · Monitoring signals{_run_str}{_paper_tag}")
             else:
-                st.caption(f"Status: **{at_status}** · Disabled")
+                st.caption(f"Status: **{at_status}** · Disabled{_paper_tag}")
+
+        # ── Drawdown circuit breaker status ──────────────────────────────
+        _dd_paused = at_state.get("dd_paused", [False])[0]
+        _sess_pnl = at_state.get("session_pnl_cents", [0])[0]
+        if _dd_paused:
+            _dd_col1, _dd_col2 = st.columns([3, 1])
+            with _dd_col1:
+                st.error(f"⛔ DRAWDOWN CIRCUIT BREAKER ACTIVE — Session PnL: {_sess_pnl:+d}¢. Re-enable to reset and resume.")
+            with _dd_col2:
+                if st.button("Reset DD & Resume", key="at_dd_reset"):
+                    at_state["dd_paused"][0] = False
+                    at_state["session_pnl_cents"][0] = 0
+        elif _sess_pnl != 0:
+            st.caption(f"Session PnL: {_sess_pnl:+d}¢ · DD limit: {_disk_settings.get('max_dd_percent', 5.0):.1f}%")
 
         ac1, ac2, ac3, ac4, ac5 = st.columns(5)
         with ac1:
             at_contracts = st.slider("Contracts per trade", 1, 10, int(_disk_settings.get("contracts", 1)), key="at_contracts")
             at_state["contracts"][0] = at_contracts
         with ac2:
-            at_conf = st.slider("Confidence threshold", 50, 95,
-                                int(_disk_settings.get("confidence_threshold", 0.70) * 100), key="at_confidence")
+            at_conf = st.slider("Confidence threshold", 50, 99,
+                                int(_disk_settings.get("confidence_threshold", 0.82) * 100), key="at_confidence")
             at_state["confidence_threshold"][0] = at_conf / 100.0
         with ac3:
             at_cd = st.slider("Cooldown (sec)", 1, 300, int(_disk_settings.get("cooldown", 30)), key="at_cooldown")
             at_state["cooldown"][0] = at_cd
         with ac4:
-            at_edge = st.slider("Min edge (model−market)", 0, 80, int(_disk_settings.get("min_edge", 55)), key="at_edge")
+            at_edge = st.slider("Min edge (model−market)", 0, 80, int(_disk_settings.get("min_edge", 32)), key="at_edge")
             at_state["min_edge"][0] = at_edge
         with ac5:
             at_margin = st.slider("Min margin (bid−ask)", 0, 30, int(_disk_settings.get("min_profit_margin", 10)), key="at_margin")
             at_state["min_profit_margin"][0] = at_margin
 
+        ac6, ac7, ac8 = st.columns(3)
+        with ac6:
+            at_kelly = st.slider("Kelly fraction", 10, 100,
+                                 int(_disk_settings.get("kelly_fraction", 0.65) * 100), key="at_kelly")
+            at_state["kelly_fraction"][0] = at_kelly / 100.0
+        with ac7:
+            at_max_dd = st.slider("Max drawdown %", 1, 20,
+                                  int(_disk_settings.get("max_dd_percent", 5.0)), key="at_max_dd")
+            at_state["max_dd_percent"][0] = float(at_max_dd)
+        with ac8:
+            _oh_default = bool(_disk_settings.get("overnight_skip_enabled", True))
+            at_hour_gate = st.toggle("Hour gate", value=_oh_default, key="at_hour_gate")
+            at_state["overnight_skip_enabled"][0] = at_hour_gate
+            _ah = _disk_settings.get("allowed_hours", [0, 1, 2, 3, 4, 22])
+            at_state["allowed_hours"][0] = _ah
+            if at_hour_gate:
+                st.caption(f"Allowed UTC hours: {_ah}")
+
         st.caption(
             "Entry rules: ≥11 consecutive signals · conf ≥ threshold · edge ≥ min · "
             "upside ≥ min margin (100−entry−6¢ fees) · "
             "entry ≤ 35¢ · spread ≤ 20¢ · ≥5 min remaining · 3× scale if ≤20¢ · "
+            "Kelly fraction sizes contracts by bankroll · "
+            "Hour gate blocks trades outside allowed UTC hours · "
+            "DD circuit breaker pauses after session loss exceeds max% · "
             "contrarian trades (YES >70¢ or <30¢) need ≥8 min remaining · "
             "Exit: trailing bid (5¢/3¢/2¢ trail tightens near close)"
         )
