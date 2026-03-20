@@ -3940,18 +3940,31 @@ def _train_cnn_lstm_10m_online():
         frames = [np.asarray(w["image"], dtype=np.float32) for w in window]
         sequences.append((frames, label))
 
-    directional_seqs = [s for s in sequences if s[1] in (0, 2)]
-    train_seqs = directional_seqs if len(directional_seqs) >= _TRAIN_MIN_SAMPLES else sequences
+    # Train on ALL sequences — model must learn NEUTRAL as a real class.
+    # Class-weighted loss compensates for the 75% NEUTRAL / 25% directional imbalance.
+    train_seqs = sequences
     n = len(train_seqs)
     if n < 2:
         return
 
+    # Compute inverse-frequency class weights
+    _lbl_counts = [0, 0, 0]
+    for _, _lbl in train_seqs:
+        _lbl_counts[_lbl] += 1
+    _total_seqs = max(sum(_lbl_counts), 1)
+    _weights = [
+        _total_seqs / max(_lbl_counts[0] * 3, 1),
+        _total_seqs / max(_lbl_counts[1] * 3, 1),
+        _total_seqs / max(_lbl_counts[2] * 3, 1),
+    ]
+    _weight_t = torch.tensor(_weights, dtype=torch.float32, device=device)
+
     model.train()
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=_weight_t)
     total_loss = 0.0
     batches = 0
 
-    for _epoch in range(3):
+    for _epoch in range(5):
         idx_list = list(range(n))
         np.random.shuffle(idx_list)
         for start in range(0, n, _TRAIN_CNN_BATCH):
