@@ -26,7 +26,7 @@ The dashboard is streamlined to a single-page view focused entirely on the **Ens
 - **Feature Contribution Breakdown:** Expandable horizontal bar chart of model feature contributions.
 - **Prediction History:** Table of recent ensemble ticks with all fields (direction, confidence, model, hawkes, probabilities).
 - **Multi-Timeframe XGBoost (15s · 1min):** Two separate XGBoost models trained on 15s and 60s forward BRTI price labels. Display-only (not wired to auto-trader). Live direction + confidence + probability breakdown shown for both horizons. Training stats (train count, sample count, in-sample accuracy) shown per model. Live DB accuracy metrics (correct/total resolved rows) shown from `xgb_mtf_predictions` table. Outcomes resolved by background thread every 30s; rows logged every ~10s during live inference.
-- **Online Training Status:** Metrics for labeled samples, XGBoost/CNN-LSTM train counts, accuracy/loss.
+- **Online Training Status:** Metrics for labeled samples, XGBoost/CNN-LSTM train counts, walk-forward accuracy/loss.
 - **Auto-Trading:** Full trading controls, position display, trade log, exit/buy-more buttons.
 - **Fragment interval:** 3 seconds (reduced from 5s for improved responsiveness since it's now the only rendering fragment).
 
