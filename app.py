@@ -581,22 +581,11 @@ def db_load_book_image_snapshots() -> list:
         conn.close()
 
 
-def db_prune_book_image_snapshots(keep_hours: int = 720):
-    """Delete book image snapshots older than keep_hours (default 30 days for CNN training history)."""
-    if not DATABASE_URL:
-        return
-    conn = _db_conn()
-    if not conn:
-        return
-    try:
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=keep_hours)).isoformat()
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute("DELETE FROM book_image_snapshots WHERE ts < %s", (cutoff,))
-    except Exception:
-        pass
-    finally:
-        conn.close()
+def db_prune_book_image_snapshots(keep_hours: int = 0):
+    """No-op — book_image_snapshots are never deleted from the database.
+    The DB is the permanent archive; in-memory deque (maxlen=10000) handles
+    active training window. Call this only if disk is critically full."""
+    pass
 
 
 def db_save_orderbook_snapshot(ts: datetime, ticker: str, yes_bids: list, yes_asks: list):
@@ -1284,18 +1273,16 @@ def db_prune_old_data():
                 cur.execute(
                     "DELETE FROM bobby_brti_ticks WHERE ts < NOW() - INTERVAL '14 days'"
                 )
-                # brti_ticks: keep 14 days
+                # brti_ticks: keep 365 days — needed to label any historical snapshot
                 cur.execute(
-                    "DELETE FROM brti_ticks WHERE ts < NOW() - INTERVAL '14 days'"
+                    "DELETE FROM brti_ticks WHERE ts < NOW() - INTERVAL '365 days'"
                 )
                 # ensemble_predictions: keep 7 days (analysis + calibration)
                 cur.execute(
                     "DELETE FROM ensemble_predictions WHERE ts < NOW() - INTERVAL '7 days'"
                 )
-                # book_image_snapshots: keep 30 days — CNN-LSTM needs long history to train
-                cur.execute(
-                    "DELETE FROM book_image_snapshots WHERE ts < NOW() - INTERVAL '30 days'"
-                )
+                # book_image_snapshots: NEVER deleted — DB is the permanent archive.
+                # In-memory deque (maxlen=10000) handles the active training window.
                 # training_samples: NEUTRAL samples (label=1) older than 14 days are
                 # unused by either model (XGBoost trains on UP/DOWN only, CNN filters
                 # NEUTRAL) — prune them to control table growth. Keep all directional.
