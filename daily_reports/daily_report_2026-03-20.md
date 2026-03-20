@@ -1,6 +1,6 @@
 # Daily Evidence Report — 2026-03-20
 
-**Generated:** 2026-03-20 07:38:43 UTC
+**Generated:** 2026-03-20 07:39:21 UTC
 **Repository:** https://github.com/raryan744/Markets
 
 ---
@@ -45,20 +45,20 @@
 ```
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 runner         1  0.3  0.1 2677216 68300 ?       Ssl  Mar19   1:49 /nix/store/f44v4qidsnm4323dwjcq9q0rxahh1pvb-pid1-0.0.1/bin/pid1 --pid2-pooling
-runner        14  5.8  1.4 56445156 924528 ?     Sl   Mar19  27:52 pid2 --no-deprecation --disable-warning=ExperimentalWarning --use-openssl-ca /pid2/bundles/0.0.3847/server.cjs --start-timestamp=1773963805231 --socket-listener-fd=3 --pinger-socket-path=/run/replit/socks/pid2ping.0.sock --pooled-fd=4
+runner        14  5.8  1.4 56445156 924540 ?     Sl   Mar19  27:56 pid2 --no-deprecation --disable-warning=ExperimentalWarning --use-openssl-ca /pid2/bundles/0.0.3847/server.cjs --start-timestamp=1773963805231 --socket-listener-fd=3 --pinger-socket-path=/run/replit/socks/pid2ping.0.sock --pooled-fd=4
 runner        46  0.0  0.0   3984  2904 ?        S    01:50   0:00 nix-editor --return-output
 runner      3306  0.0  0.0   2960  1984 ?        S    02:27   0:00 sh -c /nix/store/775cppcslcvxd4x2v8x4k78xw94zg88a-ty-0.0.21/bin/ty server
 runner      3307  0.0  0.4 2137904 317644 ?      Sl   02:27   0:12 /nix/store/775cppcslcvxd4x2v8x4k78xw94zg88a-ty-0.0.21/bin/ty server
 runner     13766  0.0  0.0   8252  5072 pts/0    Ss   03:25   0:00 /nix/store/smkzrg2vvp3lng3hq7v9svfni5mnqjh2-bash-interactive-5.2p37/bin/bash -rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc --rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc -ci python3 background_runner.py & streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
-runner     13773  106  2.1 4293212 1400664 pts/0 Sl   03:25 270:31 python3 background_runner.py
+runner     13773  106  2.1 4293212 1401088 pts/0 Sl   03:25 271:08 python3 background_runner.py
 runner     13774  1.6  0.3 2630332 215092 pts/0  Sl+  03:25   4:05 /nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin/python3 /home/runner/workspace/.pythonlibs/bin/streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
-runner     22438  112  2.2 4319984 1452916 ?     Sl   04:18 224:02 python3 background_runner.py
-runner     74428 32.8  0.6 1484864 410372 ?      S    07:38   0:00 pid2 --no-deprecation --disable-warning=ExperimentalWarning --use-openssl-ca /pid2/bundles/0.0.3847/server.cjs --start-timestamp=1773963805231 --socket-listener-fd=3 --pinger-socket-path=/run/replit/socks/pid2ping.0.sock --pooled-fd=4
-runner     74429  3.0  0.0   8112  4428 pts/2    Ss+  07:38   0:00 /nix/store/smkzrg2vvp3lng3hq7v9svfni5mnqjh2-bash-interactive-5.2p37/bin/bash -rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc --rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc -c cd /home/runner/workspace && timeout 120 python3 github_auto_push.py 2>&1 | head -50
+runner     22438  112  2.0 4188912 1373132 ?     Sl   04:18 224:58 python3 background_runner.py
+runner     74428  1.1  0.6 1484864 410436 ?      S    07:38   0:00 pid2 --no-deprecation --disable-warning=ExperimentalWarning --use-openssl-ca /pid2/bundles/0.0.3847/server.cjs --start-timestamp=1773963805231 --socket-listener-fd=3 --pinger-socket-path=/run/replit/socks/pid2ping.0.sock --pooled-fd=4
+runner     74429  0.0  0.0   8112  4428 pts/2    Ss+  07:38   0:00 /nix/store/smkzrg2vvp3lng3hq7v9svfni5mnqjh2-bash-interactive-5.2p37/bin/bash -rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc --rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc -c cd /home/runner/workspace && timeout 120 python3 github_auto_push.py 2>&1 | head -50
 runner     74432  0.0  0.0   7992  3092 pts/2    S    07:38   0:00 timeout 120 python3 github_auto_push.py
 runner     74433  0.0  0.0   7992  3196 pts/2    S+   07:38   0:00 head -50
-runner     74434 28.8  0.0  39428 29644 pts/2    S    07:38   0:00 python3 github_auto_push.py
-runner     74439 26.3  0.0  11524  5336 pts/2    R    07:38   0:00 ps aux
+runner     74434  1.4  0.0  69044 39160 pts/2    S    07:38   0:00 python3 github_auto_push.py
+runner     74536 23.5  0.0  11524  5292 pts/2    R    07:39   0:00 ps aux
 
 ```
 
@@ -70,16 +70,16 @@ runner     74439 26.3  0.0  11524  5336 pts/2    R    07:38   0:00 ps aux
 Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_prices, ensemble_predictions, kalshi_candlesticks, kalshi_depth_signal, kalshi_orderbook, training_samples, xgb_mtf_predictions
 
   auto_trades: 775 rows
-  bobby_brti_ticks: 1470892 rows
-  book_image_snapshots: 9726 rows
-  brti_ticks: 250756 rows
-  btc_prices: 12572 rows
-  ensemble_predictions: 572408 rows
+  bobby_brti_ticks: 1471192 rows
+  book_image_snapshots: 9727 rows
+  brti_ticks: 250788 rows
+  btc_prices: 12573 rows
+  ensemble_predictions: 571449 rows
   kalshi_candlesticks: 2553 rows
   kalshi_depth_signal: 0 rows
   kalshi_orderbook: 65209 rows
-  training_samples: 734402 rows
-  xgb_mtf_predictions: 8773 rows
+  training_samples: 734458 rows
+  xgb_mtf_predictions: 8785 rows
 
 ```
 
@@ -121,13 +121,15 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
   auto_trade_settings.json: 257 bytes, modified 2026-03-20 05:48:47
   auto_trading_sliders.png: 4,016 bytes, modified 2026-03-18 23:47:57
   background_runner.py: 7,567 bytes, modified 2026-03-20 07:38:38
-  brti_cnn_lstm.pth: 2,314,039 bytes, modified 2026-03-20 07:37:09
-  brti_cnn_lstm_10m.pth: 2,314,127 bytes, modified 2026-03-20 07:37:35
+  brti_cnn_lstm.pth: 2,314,039 bytes, modified 2026-03-20 07:38:49
+  brti_cnn_lstm_10m.pth: 2,314,127 bytes, modified 2026-03-20 07:39:19
   brti_xgboost.pkl: 363,599 bytes, modified 2026-03-20 07:37:49
-  brti_xgboost_15s.pkl: 292,131 bytes, modified 2026-03-20 07:37:38
+  brti_xgboost_15s.pkl: 270,371 bytes, modified 2026-03-20 07:39:22
   brti_xgboost_60s.pkl: 336,671 bytes, modified 2026-03-20 07:37:42
   brti_xgboost_magnitude.pkl: 376,736 bytes, modified 2026-03-20 07:37:53
+  daily_report_2026-03-20.md: 35,877 bytes, modified 2026-03-20 07:38:45
   github_auto_push.py: 10,138 bytes, modified 2026-03-20 07:38:33
+  github_push_log.json: 2,484 bytes, modified 2026-03-20 07:39:21
   main.py: 96 bytes, modified 2026-03-07 00:48:06
   pyproject.toml: 90,964 bytes, modified 2026-03-13 00:56:26
   replit.md: 9,288 bytes, modified 2026-03-19 20:05:44
@@ -359,10 +361,11 @@ Method -warn:
 
 ## Push History
 
-Total pushes to date: 0
-Last push: None
+Total pushes to date: 1
+Last push: 2026-03-20 07:38:43 UTC
 
+- 2026-03-20 07:38:43 UTC: 12 pushed, 0 failed
 
 ---
 
-*Auto-generated by github_auto_push.py at 2026-03-20 07:38:43 UTC*
+*Auto-generated by github_auto_push.py at 2026-03-20 07:39:21 UTC*
