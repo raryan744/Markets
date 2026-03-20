@@ -1,0 +1,16 @@
+<workflow>
+<workflow_name>Start application</workflow_name>
+<status>RUNNING</status><run_id>MKPC7Gti2arQx2OByrcS2</run_id><timestamp>2026-03-20T02:59:10.745834+00:00</timestamp>
+<logs>[1] 5864
+[02:45:16] background_runner: starting — loading app.py engine
+Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
+[02:45:17] background_runner: entering keep-alive loop
+  You can now view your Streamlit app in your browser.
+  Local URL: http://localhost:5000
+  Network URL: http://172.31.98.162:5000
+  External URL: http://8.229.178.165:5000
+2026-03-20 02:45:22.420 Thread 'streamlit-startup': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-20 02:45:27.432 Thread 'streamlit-startup': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+[02:50:17] background_runner alive — threads: ['MainThread', 'keep-alive', 'Thread-1 (_bg_data_loop)', 'Thread-2 (run_forever)', 'Thread-3 (_bobby_thread_target)', 'Thread-4 (_run_safe_shutdown_loop)', 'Thread-5 (_ensemble_thread_target)', 'auto-trader', 'Thread-6 (_ensemble_deep_inference_loop)', 'ensemble-trainer', 'persist-labels']
+[02:55:18] background_runner alive — threads: ['MainThread', 'keep-alive', 'Thread-1 (_bg_data_loop)', 'Thread-2 (run_forever)', 'Thread-3 (_bobby_thread_target)', 'Thread-4 (_run_safe_shutdown_loop)', 'Thread-5 (_ensemble_thread_target)', 'auto-trader', 'Thread-6 (_ensemble_deep_inference_loop)', 'ensemble-trainer']</logs>
+</workflow>
