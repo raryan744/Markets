@@ -581,8 +581,8 @@ def db_load_book_image_snapshots() -> list:
         conn.close()
 
 
-def db_prune_book_image_snapshots(keep_hours: int = 48):
-    """Delete book image snapshots older than keep_hours."""
+def db_prune_book_image_snapshots(keep_hours: int = 720):
+    """Delete book image snapshots older than keep_hours (default 30 days for CNN training history)."""
     if not DATABASE_URL:
         return
     conn = _db_conn()
@@ -1292,9 +1292,9 @@ def db_prune_old_data():
                 cur.execute(
                     "DELETE FROM ensemble_predictions WHERE ts < NOW() - INTERVAL '7 days'"
                 )
-                # book_image_snapshots: keep 48 hours (CNN only needs recent images)
+                # book_image_snapshots: keep 30 days — CNN-LSTM needs long history to train
                 cur.execute(
-                    "DELETE FROM book_image_snapshots WHERE ts < NOW() - INTERVAL '48 hours'"
+                    "DELETE FROM book_image_snapshots WHERE ts < NOW() - INTERVAL '30 days'"
                 )
                 # training_samples: NEUTRAL samples (label=1) older than 14 days are
                 # unused by either model (XGBoost trains on UP/DOWN only, CNN filters
