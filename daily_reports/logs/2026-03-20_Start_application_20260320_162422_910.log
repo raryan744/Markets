@@ -1,0 +1,7 @@
+<workflow>
+<workflow_name>Start application</workflow_name>
+<status>RUNNING</status><run_id>GAsHGR15XAz-9wtgy8jc0</run_id><timestamp>2026-03-20T16:24:22.870643+00:00</timestamp>
+<logs>2026-03-20 16:22:27.493 Thread 'streamlit-startup': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-20 16:22:32.496 Thread 'streamlit-startup': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+[16:24:22] background_runner alive — threads: ['MainThread', 'keep-alive', 'Thread-1 (_bg_data_loop)', 'github-auto-push', 'Thread-2 (run_forever)', 'Thread-3 (_bobby_thread_target)', 'Thread-4 (_run_safe_shutdown_loop)', 'Thread-5 (_ensemble_thread_target)', 'auto-trader', 'Thread-6 (_ensemble_deep_inference_loop)', 'ensemble-trainer']</logs>
+</workflow>
