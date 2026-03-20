@@ -1,0 +1,2 @@
+pip install aider-chat
+aider --model github:openai/gpt-4o  # uses GitHub’s free GPT-4o API
