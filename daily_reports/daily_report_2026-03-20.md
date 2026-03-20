@@ -1,6 +1,6 @@
 # Daily Evidence Report — 2026-03-20
 
-**Generated:** 2026-03-20 16:06:04 UTC
+**Generated:** 2026-03-20 16:19:22 UTC
 **Repository:** https://github.com/raryan744/Markets
 
 ---
@@ -38,8 +38,8 @@
   - MainThread (daemon=False, alive=True)
   - keep-alive (daemon=True, alive=True)
   - staggered-startup (daemon=True, alive=True)
-  - github-auto-push (daemon=True, alive=True)
   - Thread-1 (_bg_data_loop) (daemon=True, alive=True)
+  - github-auto-push (daemon=True, alive=True)
 ```
 
 ---
@@ -48,12 +48,14 @@
 
 ```
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-runner         1  0.0  0.0 2381776 52244 ?       Ssl  14:59   0:00 /nix/store/f44v4qidsnm4323dwjcq9q0rxahh1pvb-pid1-0.0.1/bin/pid1 --pid2-pooling
-runner        14  0.1  0.8 23426296 581920 ?     Sl   14:59   0:06 pid2 --no-deprecation --disable-warning=ExperimentalWarning --use-openssl-ca /pid2/bundles/0.0.3850/server.cjs --start-timestamp=1774018756336 --socket-listener-fd=3 --pinger-socket-path=/run/replit/socks/pid2ping.0.sock --pooled-fd=4
-runner        77  0.1  0.0   8252  4968 pts/0    Ss   16:05   0:00 /nix/store/smkzrg2vvp3lng3hq7v9svfni5mnqjh2-bash-interactive-5.2p37/bin/bash -rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc --rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc -ci python3 background_runner.py & streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
-runner        84 13.7  0.2 917388 136028 pts/0   Sl   16:05   0:01 python3 background_runner.py
-runner        89 20.1  0.1 458152 80884 pts/0    Sl+  16:05   0:01 /nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin/python3 /home/runner/workspace/.pythonlibs/bin/streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
-runner       110 17.8  0.0  11172  4956 pts/0    R    16:06   0:00 ps aux
+runner         1  0.0  0.0 2382032 59788 ?       Ssl  14:59   0:04 /nix/store/f44v4qidsnm4323dwjcq9q0rxahh1pvb-pid1-0.0.1/bin/pid1 --pid2-pooling
+runner        14  0.4  0.9 23500896 601004 ?     Sl   14:59   0:20 pid2 --no-deprecation --disable-warning=ExperimentalWarning --use-openssl-ca /pid2/bundles/0.0.3850/server.cjs --start-timestamp=1774018756336 --socket-listener-fd=3 --pinger-socket-path=/run/replit/socks/pid2ping.0.sock --pooled-fd=4
+runner      1427  0.0  0.0   2960  2108 ?        S    16:14   0:00 sh -c /nix/store/775cppcslcvxd4x2v8x4k78xw94zg88a-ty-0.0.21/bin/ty server
+runner      1428  1.6  0.5 2135344 329436 ?      Sl   16:14   0:04 /nix/store/775cppcslcvxd4x2v8x4k78xw94zg88a-ty-0.0.21/bin/ty server
+runner      2114  0.0  0.0   8252  4876 pts/0    Ss   16:19   0:00 /nix/store/smkzrg2vvp3lng3hq7v9svfni5mnqjh2-bash-interactive-5.2p37/bin/bash -rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc --rcfile /nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc -ci python3 background_runner.py & streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
+runner      2121  141  0.2 917528 131936 pts/0   Sl   16:19   0:00 python3 background_runner.py
+runner      2122 92.5  0.1 112764 102420 pts/0   R+   16:19   0:00 /nix/store/flbj8bq2vznkcwss7sm0ky8rd0k6kar7-python-wrapped-0.1.0/bin/python3 /home/runner/workspace/.pythonlibs/bin/streamlit run app.py --server.port 5000 --server.enableCORS false --server.enableXsrfProtection false
+runner      2152  0.0  0.0  11344  5068 pts/0    R    16:19   0:00 ps aux
 
 ```
 
@@ -65,16 +67,16 @@ runner       110 17.8  0.0  11172  4956 pts/0    R    16:06   0:00 ps aux
 Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_prices, ensemble_predictions, kalshi_candlesticks, kalshi_depth_signal, kalshi_orderbook, training_samples, xgb_mtf_predictions
 
   auto_trades: 775 rows
-  bobby_brti_ticks: 1614352 rows
-  book_image_snapshots: 10359 rows
-  brti_ticks: 269730 rows
-  btc_prices: 13026 rows
-  ensemble_predictions: 615117 rows
+  bobby_brti_ticks: 1618312 rows
+  book_image_snapshots: 3624 rows
+  brti_ticks: 270510 rows
+  btc_prices: 13038 rows
+  ensemble_predictions: 610617 rows
   kalshi_candlesticks: 2574 rows
   kalshi_depth_signal: 0 rows
   kalshi_orderbook: 59289 rows
-  training_samples: 790061 rows
-  xgb_mtf_predictions: 14299 rows
+  training_samples: 0 rows
+  xgb_mtf_predictions: 14414 rows
 
 ```
 
@@ -112,19 +114,16 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
   SKILLS_PRIMARY.md: 257,193 bytes, modified 2026-03-20 07:31:26
   SKILLS_SECONDARY.md: 376,275 bytes, modified 2026-03-20 07:31:26
   SYSTEM_FAILURE_REPORT.md: 117,931 bytes, modified 2026-03-20 07:22:36
-  app.py: 300,794 bytes, modified 2026-03-20 03:25:01
+  app.py: 305,399 bytes, modified 2026-03-20 16:18:22
   auto_trade_settings.json: 257 bytes, modified 2026-03-20 05:48:47
   auto_trading_sliders.png: 4,016 bytes, modified 2026-03-18 23:47:57
   background_runner.py: 7,567 bytes, modified 2026-03-20 07:38:38
-  brti_cnn_lstm.pth: 2,314,039 bytes, modified 2026-03-20 13:11:18
-  brti_cnn_lstm_10m.pth: 2,314,127 bytes, modified 2026-03-20 13:11:36
-  brti_xgboost.pkl: 375,155 bytes, modified 2026-03-20 13:11:41
-  brti_xgboost_15s.pkl: 129,397 bytes, modified 2026-03-20 13:11:36
-  brti_xgboost_60s.pkl: 154,827 bytes, modified 2026-03-20 13:11:37
+  brti_cnn_lstm.pth: 2,314,039 bytes, modified 2026-03-20 16:19:18
+  brti_cnn_lstm_10m.pth: 2,314,127 bytes, modified 2026-03-20 16:16:29
   brti_xgboost_magnitude.pkl: 117,993 bytes, modified 2026-03-20 13:11:41
-  daily_report_2026-03-20.md: 17,083 bytes, modified 2026-03-20 12:54:37
+  daily_report_2026-03-20.md: 17,129 bytes, modified 2026-03-20 16:06:10
   github_auto_push.py: 10,138 bytes, modified 2026-03-20 07:38:33
-  github_push_log.json: 8,183 bytes, modified 2026-03-20 12:55:00
+  github_push_log.json: 9,295 bytes, modified 2026-03-20 16:06:36
   main.py: 96 bytes, modified 2026-03-07 00:48:06
   pyproject.toml: 90,964 bytes, modified 2026-03-13 00:56:26
   replit.md: 9,288 bytes, modified 2026-03-19 20:05:44
@@ -237,14 +236,15 @@ No logs found
 
 ## Push History
 
-Total pushes to date: 4
-Last push: 2026-03-20 12:54:31 UTC
+Total pushes to date: 5
+Last push: 2026-03-20 16:06:04 UTC
 
 - 2026-03-20 07:38:43 UTC: 12 pushed, 0 failed
 - 2026-03-20 07:39:21 UTC: 12 pushed, 0 failed
 - 2026-03-20 07:40:02 UTC: 11 pushed, 0 failed
 - 2026-03-20 12:54:31 UTC: 6 pushed, 0 failed
+- 2026-03-20 16:06:04 UTC: 6 pushed, 0 failed
 
 ---
 
-*Auto-generated by github_auto_push.py at 2026-03-20 16:06:04 UTC*
+*Auto-generated by github_auto_push.py at 2026-03-20 16:19:22 UTC*
