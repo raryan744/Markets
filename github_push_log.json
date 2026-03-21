@@ -1009,49 +1009,49 @@
       ]
     },
     {
-      "date": "2026-03-21 15:22:34 UTC",
-      "files_pushed": 6,
-      "files_failed": 0,
+      "date": "2026-03-21 15:22:33 UTC",
+      "files_pushed": 3,
+      "files_failed": 3,
       "results": [
         {
           "file": "daily_reports/daily_report_2026-03-21.md",
-          "success": true,
-          "detail": "200 OK",
-          "time": "2026-03-21 15:22:34 UTC"
+          "success": false,
+          "detail": "ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+          "time": "2026-03-21 15:22:33 UTC"
         },
         {
           "file": "auto_trade_settings.json",
-          "success": true,
-          "detail": "200 OK",
-          "time": "2026-03-21 15:22:34 UTC"
+          "success": false,
+          "detail": "SSLError: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/raryan744/Markets/contents/auto_trade_settings.json (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))",
+          "time": "2026-03-21 15:22:33 UTC"
         },
         {
           "file": "app.py",
-          "success": true,
-          "detail": "200 OK",
-          "time": "2026-03-21 15:22:34 UTC"
+          "success": false,
+          "detail": "SSLError: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/raryan744/Markets/contents/app.py (Caused by SSLError(SSLError(5, '[SSL: UNEXPECTED_EOF_WHILE_READING] unexpected eof while reading (_ssl.c:2590)')))",
+          "time": "2026-03-21 15:22:33 UTC"
         },
         {
           "file": "background_runner.py",
           "success": true,
           "detail": "200 OK",
-          "time": "2026-03-21 15:22:34 UTC"
+          "time": "2026-03-21 15:22:33 UTC"
         },
         {
           "file": "replit.md",
           "success": true,
           "detail": "200 OK",
-          "time": "2026-03-21 15:22:34 UTC"
+          "time": "2026-03-21 15:22:33 UTC"
         },
         {
           "file": "github_auto_push.py",
           "success": true,
           "detail": "200 OK",
-          "time": "2026-03-21 15:22:34 UTC"
+          "time": "2026-03-21 15:22:33 UTC"
         }
       ]
     }
   ],
-  "last_push": "2026-03-21 15:22:34 UTC",
+  "last_push": "2026-03-21 15:22:33 UTC",
   "total_pushes": 19
 }
