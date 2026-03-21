@@ -1009,49 +1009,49 @@
       ]
     },
     {
-      "date": "2026-03-21 07:10:26 UTC",
-      "files_pushed": 6,
-      "files_failed": 0,
+      "date": "2026-03-21 07:10:29 UTC",
+      "files_pushed": 5,
+      "files_failed": 1,
       "results": [
         {
           "file": "daily_reports/daily_report_2026-03-21.md",
           "success": true,
           "detail": "200 OK",
-          "time": "2026-03-21 07:10:26 UTC"
+          "time": "2026-03-21 07:10:29 UTC"
         },
         {
           "file": "auto_trade_settings.json",
           "success": true,
           "detail": "200 OK",
-          "time": "2026-03-21 07:10:26 UTC"
+          "time": "2026-03-21 07:10:29 UTC"
         },
         {
           "file": "app.py",
           "success": true,
           "detail": "200 OK",
-          "time": "2026-03-21 07:10:26 UTC"
+          "time": "2026-03-21 07:10:29 UTC"
         },
         {
           "file": "background_runner.py",
           "success": true,
           "detail": "200 OK",
-          "time": "2026-03-21 07:10:26 UTC"
+          "time": "2026-03-21 07:10:29 UTC"
         },
         {
           "file": "replit.md",
-          "success": true,
-          "detail": "200 OK",
-          "time": "2026-03-21 07:10:26 UTC"
+          "success": false,
+          "detail": "SSLError: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/raryan744/Markets/contents/replit.md (Caused by SSLError(SSLError(5, '[SSL: UNEXPECTED_EOF_WHILE_READING] unexpected eof while reading (_ssl.c:2590)')))",
+          "time": "2026-03-21 07:10:29 UTC"
         },
         {
           "file": "github_auto_push.py",
           "success": true,
           "detail": "200 OK",
-          "time": "2026-03-21 07:10:26 UTC"
+          "time": "2026-03-21 07:10:29 UTC"
         }
       ]
     }
   ],
-  "last_push": "2026-03-21 07:10:26 UTC",
+  "last_push": "2026-03-21 07:10:29 UTC",
   "total_pushes": 19
 }
