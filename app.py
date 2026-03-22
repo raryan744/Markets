@@ -6286,14 +6286,14 @@ _PT_SINGLETON = [None]
 _PT_SINGLETON_LOCK = threading.Lock()
 
 _PT_LEVELS = [
-    {"qty": 1, "target_cents": 40},
-    {"qty": 2, "target_cents": 35},
-    {"qty": 2, "target_cents": 30},
+    {"qty": 1, "target_cents": 40, "limit_cents": 41.75},   # 1.75¢ buffer
+    {"qty": 2, "target_cents": 35, "limit_cents": 37.25},   # 2.25¢ buffer
+    {"qty": 2, "target_cents": 30, "limit_cents": 33.00},   # 3.00¢ buffer
 ]
-_PT_BUFFER_CENTS = 1
 _PT_TP_MULT = 1.20
 _PT_RISK_CAP = 0.08
 _PT_POLL_SEC = 8
+_PT_CLOSE_BUFFER_S = 60   # force-close all positions this many seconds before window end
 
 
 def _pt_read_cfg() -> dict:
@@ -6431,6 +6431,46 @@ def _pt_reset_side(s: dict, side: str):
     s[f"filled_levels_{side}"][0] = [False, False, False]
 
 
+def _pt_force_close_all(s: dict, ticker: str, yes_frac, no_frac,
+                        bid_cents, ask_cents, reason: str, log_fn):
+    """Force-close any open YES and NO positions immediately at current market price."""
+    for side in ("yes", "no"):
+        pos = s[f"position_{side}"][0]
+        if pos <= 0:
+            continue
+        price_frac = yes_frac if side == "yes" else no_frac
+        price_cents = round(price_frac * 100)
+        invested = s[f"total_invested_{side}"][0]
+        fee_c = _pt_fee_cents(pos, price_frac, is_maker=False)
+        net_cents = pos * price_cents - fee_c
+        pnl_cents = net_cents - round(invested * 100)
+
+        if side == "yes":
+            sell_verified = bid_cents is not None and price_cents >= bid_cents
+        else:
+            no_bid = (100 - ask_cents) if ask_cents is not None else None
+            sell_verified = no_bid is not None and price_cents >= no_bid
+
+        s["bankroll"][0] += net_cents / 100.0
+        s["session_pnl"][0] += pnl_cents / 100.0
+        s["session_trades"][0] += 1
+
+        log_fn(f"[{side.upper()}] FORCE-CLOSE {pos}@{price_cents}¢  "
+               f"pnl={pnl_cents:+d}¢  br=${s['bankroll'][0]:.2f}  "
+               f"reason={reason}  sell={'✅' if sell_verified else '⚠️'}")
+
+        db_insert_paper_trade(
+            ticker=ticker, side=side, action="sell", level_idx=None,
+            qty=pos, fill_price_cents=price_cents, fee_cents=fee_c,
+            bankroll_cents=round(s["bankroll"][0] * 100),
+            pnl_cents=pnl_cents,
+            fill_verified=False, sell_verified=sell_verified,
+            market_bid_cents=bid_cents, market_ask_cents=ask_cents,
+            reason=reason,
+        )
+        _pt_reset_side(s, side)
+
+
 def _pt_discover_ticker() -> str | None:
     try:
         data = _kalshi_get_bg("/markets",
@@ -6460,9 +6500,10 @@ def _pt_process_side(s: dict, side: str, price_frac: float,
         for i, level in enumerate(_PT_LEVELS):
             if filled[i]:
                 continue
-            trigger = level["target_cents"] + _PT_BUFFER_CENTS
+            trigger = level["limit_cents"]  # limit buy price (includes per-level buffer)
             if price_cents <= trigger:
-                fill_cents = min(price_cents + 1, trigger)
+                # Simulating a resting limit order: fills at the limit price (maker)
+                fill_cents = round(level["limit_cents"])
                 fill_frac = fill_cents / 100.0
                 qty = level["qty"]
                 cost_cents = qty * fill_cents
@@ -6634,10 +6675,23 @@ def _pt_loop():
             s["last_no_price"][0] = no_frac
             s["last_ts"][0] = datetime.now(timezone.utc).isoformat()
             s["price_history"].append(yes_frac)
-            s["status"][0] = "running"
 
-            _pt_process_side(s, "yes", yes_frac, bid_cents, ask_cents, ticker, _log)
-            _pt_process_side(s, "no",  no_frac,  bid_cents, ask_cents, ticker, _log)
+            # ── Window expiry guard ────────────────────────────────────────
+            secs_left = _time_remaining_s_for_ticker(ticker)
+            any_open = s["position_yes"][0] > 0 or s["position_no"][0] > 0
+
+            if secs_left <= _PT_CLOSE_BUFFER_S:
+                # Force-close all open positions before the window settles
+                if any_open:
+                    _log(f"⏰ {secs_left:.0f}s to close — force-closing all positions")
+                    _pt_force_close_all(s, ticker, yes_frac, no_frac,
+                                        bid_cents, ask_cents, "pre_expiry", _log)
+                s["status"][0] = f"closing ({secs_left:.0f}s left)"
+                # No new entries in the final minute regardless of minute-gate
+            else:
+                s["status"][0] = "running"
+                _pt_process_side(s, "yes", yes_frac, bid_cents, ask_cents, ticker, _log)
+                _pt_process_side(s, "no",  no_frac,  bid_cents, ask_cents, ticker, _log)
 
             _pt_write_state_file(s)
 
@@ -7855,8 +7909,10 @@ _render_ensemble_tab()
 
 st.divider()
 st.subheader("📋 DCA Paper Trader — Both Sides (KXBTC15M)")
-st.caption("Mirrors YES + NO sides independently. Buys 1@40¢ · 2@35¢ · 2@30¢. Exits at 20% TP. "
-           "First 10 min = entries open · Last 5 min = exits only. Kalshi fees applied.")
+st.caption("Mirrors YES + NO sides independently. "
+           "Limit buys: 1@41.75¢ (40¢ target) · 2@37.25¢ (35¢ target) · 2@33.00¢ (30¢ target). "
+           "Exits at 20% TP. First 10 min = entries open · Last 5 min + final 60s = exits only. "
+           "Maker fee on entry, taker fee on exit.")
 
 _pt_sf = _pt_read_state_file()
 
