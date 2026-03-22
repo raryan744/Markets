@@ -1,6 +1,6 @@
 # Daily Evidence Report — 2026-03-22
 
-**Generated:** 2026-03-22 03:39:38 UTC
+**Generated:** 2026-03-22 03:47:55 UTC
 **Repository:** https://github.com/raryan744/Markets
 
 ---
@@ -15,7 +15,7 @@
   "cooldown": 30,
   "min_edge": 32,
   "min_profit_margin": 1,
-  "paper_mode": true,
+  "paper_mode": false,
   "allowed_hours": [
     0,
     1,
@@ -24,7 +24,7 @@
     4,
     22
   ],
-  "overnight_skip_enabled": true,
+  "overnight_skip_enabled": false,
   "max_dd_percent": 5.0,
   "kelly_fraction": 0.65
 }
@@ -60,13 +60,13 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
   auto_trades: 419 rows
   bobby_brti_ticks: 587759 rows
   book_image_snapshots: 3552 rows
-  brti_ticks: 347517 rows
-  btc_prices: 11145 rows
+  brti_ticks: 347997 rows
+  btc_prices: 11153 rows
   ensemble_predictions: 307259 rows
   kalshi_candlesticks: 2168 rows
   kalshi_depth_signal: 0 rows
-  kalshi_orderbook: 50210 rows
-  paper_trader_log: 715 rows
+  kalshi_orderbook: 46460 rows
+  paper_trader_log: 717 rows
   training_samples: 199197 rows
   xgb_mtf_predictions: 3664 rows
 
@@ -85,9 +85,9 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
   PGPORT=5432
   PYTHONPATH=/nix/store/y50fwh2sha400s38m12psfxpvk2c8w39-sitecustomize/lib/python/site-packages:/nix/store/sqs1z4grvym0nv6r3ksdc990m8sr5wgx-python3.11-pip-25.0.1/lib/python3.11/site-packages
   REPLIT_DB_URL=NOT SET
-  REPLIT_DEV_DOMAIN=35f20cd7-3230-421e-88f9-3a48005150d4-00-b62fgqjp8ckw.kirk.replit.dev
+  REPLIT_DEV_DOMAIN=3dae2ece-a585-42e2-a6e8-81f60e12cce2-00-22zh5b5u41d7e.kirk.replit.dev
   REPLIT_DOMAINS=market-divergence-analysis.replit.app
-  REPL_ID=35f20cd7-3230-421e-88f9-3a48005150d4
+  REPL_ID=3dae2ece-a585-42e2-a6e8-81f60e12cce2
   REPL_OWNER=PsyBob
   REPL_SLUG=workspace
 ```
@@ -106,19 +106,21 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
   SKILLS_PRIMARY.md: 257,193 bytes, modified 2026-03-20 07:31:26
   SKILLS_SECONDARY.md: 376,275 bytes, modified 2026-03-20 07:31:26
   SYSTEM_FAILURE_REPORT.md: 117,931 bytes, modified 2026-03-20 07:22:37
-  app.py: 332,855 bytes, modified 2026-03-20 20:25:48
-  auto_trade_settings.json: 257 bytes, modified 2026-03-20 20:27:40
+  app.py: 335,875 bytes, modified 2026-03-20 21:22:49
+  auto_trade_settings.json: 259 bytes, modified 2026-03-22 03:43:11
   auto_trading_sliders.png: 4,016 bytes, modified 2026-03-18 23:47:58
   background_runner.py: 7,567 bytes, modified 2026-03-20 07:38:39
-  brti_cnn_lstm.pth: 2,314,039 bytes, modified 2026-03-20 20:26:49
-  brti_cnn_lstm_10m.pth: 2,314,127 bytes, modified 2026-03-20 20:24:38
-  brti_xgboost.pkl: 1,070,788 bytes, modified 2026-03-20 20:26:46
-  brti_xgboost_15s.pkl: 111,303 bytes, modified 2026-03-20 20:24:38
-  brti_xgboost_60s.pkl: 126,812 bytes, modified 2026-03-20 20:24:39
-  brti_xgboost_magnitude.pkl: 109,550 bytes, modified 2026-03-20 20:24:48
-  daily_report_2026-03-20.md: 18,350 bytes, modified 2026-03-20 20:26:00
+  brti_cnn_lstm.pth: 2,314,039 bytes, modified 2026-03-22 03:41:55
+  brti_cnn_lstm_10m.pth: 2,314,127 bytes, modified 2026-03-21 20:53:54
+  brti_xgboost.pkl: 972,460 bytes, modified 2026-03-22 03:41:52
+  brti_xgboost_15s.pkl: 128,033 bytes, modified 2026-03-21 01:01:56
+  brti_xgboost_60s.pkl: 111,305 bytes, modified 2026-03-21 20:53:54
+  brti_xgboost_magnitude.pkl: 186,591 bytes, modified 2026-03-21 00:57:20
+  daily_report_2026-03-20.md: 17,362 bytes, modified 2026-03-20 23:47:44
+  daily_report_2026-03-21.md: 18,233 bytes, modified 2026-03-21 20:43:56
+  daily_report_2026-03-22.md: 19,115 bytes, modified 2026-03-22 03:42:40
   github_auto_push.py: 10,138 bytes, modified 2026-03-20 07:38:33
-  github_push_log.json: 28,671 bytes, modified 2026-03-20 20:26:19
+  github_push_log.json: 40,903 bytes, modified 2026-03-22 03:42:58
   main.py: 96 bytes, modified 2026-03-07 00:48:06
   pyproject.toml: 90,964 bytes, modified 2026-03-13 00:56:26
   replit.md: 9,301 bytes, modified 2026-03-20 16:33:43
@@ -137,6 +139,7 @@ Tables: auto_trades, bobby_brti_ticks, book_image_snapshots, brti_ticks, btc_pri
   attached_assets/Pasted-import-requests-import-time-import-datetime-import-stat_1774037941575.txt: 7,992 bytes, modified 2026-03-20 20:19:02
   attached_assets/image_1773277442314.png: 432,201 bytes, modified 2026-03-12 01:04:03
   attached_assets/image_1773929697578.png: 197,134 bytes, modified 2026-03-19 14:14:58
+  attached_assets/image_1774041692826.png: 76,675 bytes, modified 2026-03-20 21:21:33
   db_backup/RESTORE.md: 1,596 bytes, modified 2026-03-20 00:31:32
   scripts/deploy_db_setup.py: 2,734 bytes, modified 2026-03-19 22:13:22
   scripts/post-merge.sh: 730 bytes, modified 2026-03-15 21:14:03
@@ -231,15 +234,15 @@ No logs found
 
 ## Push History
 
-Total pushes to date: 18
-Last push: 2026-03-20 20:25:59 UTC
+Total pushes to date: 29
+Last push: 2026-03-22 03:42:39 UTC
 
-- 2026-03-20 17:11:50 UTC: 10 pushed, 0 failed
-- 2026-03-20 18:05:07 UTC: 5 pushed, 1 failed
-- 2026-03-20 18:36:24 UTC: 6 pushed, 0 failed
-- 2026-03-20 20:12:17 UTC: 6 pushed, 0 failed
-- 2026-03-20 20:25:59 UTC: 6 pushed, 0 failed
+- 2026-03-20 23:26:09 UTC: 6 pushed, 0 failed
+- 2026-03-20 23:47:38 UTC: 6 pushed, 0 failed
+- 2026-03-21 20:43:55 UTC: 6 pushed, 0 failed
+- 2026-03-22 03:40:44 UTC: 6 pushed, 0 failed
+- 2026-03-22 03:42:39 UTC: 6 pushed, 0 failed
 
 ---
 
-*Auto-generated by github_auto_push.py at 2026-03-22 03:39:38 UTC*
+*Auto-generated by github_auto_push.py at 2026-03-22 03:47:55 UTC*
